@@ -12,8 +12,10 @@ const (
 	Reset     = "\u001b[0m"
 )
 
+// Style is an ANSI formatting string
 type Style string
 
+// GetStyle finds a pre-defined ANSI formatting string by name.
 func GetStyle(name string) Style {
 	s, ok := styleNames[name]
 	if ok {

@@ -1,7 +1,6 @@
 package tchan
 
 import (
-	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -16,6 +15,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// Initialize starts the backend and collects runtime information.
 func Initialize() error {
 	var err error
 
@@ -24,25 +24,24 @@ func Initialize() error {
 	}
 
 	data.Boards, err = backend.FetchBoardIDs()
-	data.Help = data.GatherHelpContent()
+	data.BoardParams = data.GatherBoardParameters()
 	return err
 }
 
+// Shutdown handles backend shutdown and associated actions.
 func Shutdown() error {
 	return backend.Shutdown()
 }
 
-func HandleHelp(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Happy to help\n")
-}
-
+// HandleWelcome returns a welcome message.
 func HandleWelcome(w http.ResponseWriter, r *http.Request) {
-	f := format.ChooseFormatter(r, w)
-	f.FormatHelp(data.Help)
+	f := format.Select(r, w)
+	f.FormatWelcome(data.BoardParams)
 }
 
+// ViewBoard returns a board overview.
 func ViewBoard(w http.ResponseWriter, r *http.Request) {
-	f := format.ChooseFormatter(r, w)
+	f := format.Select(r, w)
 	bname := mux.Vars(r)["board"]
 	if board, ok := data.Boards[bname]; ok {
 		b, err := backend.GetBoard(board.ID)
@@ -58,7 +57,8 @@ func ViewBoard(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func boardPostIdFromRequest(r *http.Request) (string, data.LPid, bool) {
+// Finds the post from the in-board ID used in the request.
+func boardPostIDFromRequest(r *http.Request) (string, data.LPid, bool) {
 	board := mux.Vars(r)["board"]
 	idField := mux.Vars(r)["id"]
 	rawPid, err := strconv.Atoi(idField)
@@ -69,9 +69,10 @@ func boardPostIdFromRequest(r *http.Request) (string, data.LPid, bool) {
 	return board, pid, true
 }
 
+// ViewThread returns a thread overview.
 func ViewThread(w http.ResponseWriter, r *http.Request) {
-	f := format.ChooseFormatter(r, w)
-	bname, opID, ok := boardPostIdFromRequest(r)
+	f := format.Select(r, w)
+	bname, opID, ok := boardPostIDFromRequest(r)
 	board, ok := data.Boards[bname]
 	if !ok {
 		w.WriteHeader(http.StatusNotFound)
@@ -79,7 +80,7 @@ func ViewThread(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tID, ok, err := backend.GetThreadId(board.ID, opID)
+	tID, ok, err := backend.GetThreadID(board.ID, opID)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		f.FormatError(errors.Errorf("couldn't find thread: /%s/%d", bname, opID))
@@ -102,6 +103,7 @@ func ViewThread(w http.ResponseWriter, r *http.Request) {
 	f.FormatThread(thread)
 }
 
+//  Gathers relevant data for creating a new post.
 func parseNewPost(r *http.Request) (data.Post, error) {
 	content := ""
 	if body, err := ioutil.ReadAll(r.Body); len(body) > config.Conf.Max.PostSize {
@@ -119,9 +121,10 @@ func parseNewPost(r *http.Request) (data.Post, error) {
 	return data.Post{Author: author, AuthorIP: "", Content: content, Timestamp: time.Now()}, nil
 }
 
+// CreateThread handles the creation of new threads on request.
 func CreateThread(w http.ResponseWriter, r *http.Request) {
-	f := format.ChooseFormatter(r, w)
-	bname, _, _ := boardPostIdFromRequest(r)
+	f := format.Select(r, w)
+	bname, _, _ := boardPostIDFromRequest(r)
 	board, ok := data.Boards[bname]
 	if !ok {
 		w.WriteHeader(http.StatusNotFound)
@@ -165,9 +168,10 @@ func CreateThread(w http.ResponseWriter, r *http.Request) {
 	f.FormatThread(thread)
 }
 
+// ReplyToThread handles responses to existing threads.
 func ReplyToThread(w http.ResponseWriter, r *http.Request) {
-	f := format.ChooseFormatter(r, w)
-	bname, opID, ok := boardPostIdFromRequest(r)
+	f := format.Select(r, w)
+	bname, opID, ok := boardPostIDFromRequest(r)
 	board, ok := data.Boards[bname]
 	if !ok {
 		w.WriteHeader(http.StatusNotFound)
@@ -175,7 +179,7 @@ func ReplyToThread(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tID, ok, err := backend.GetThreadId(board.ID, opID)
+	tID, ok, err := backend.GetThreadID(board.ID, opID)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		f.FormatError(errors.Errorf("couldn't find thread: /%s/%d", bname, opID))

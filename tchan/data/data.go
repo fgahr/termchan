@@ -8,27 +8,29 @@ import (
 	"github.com/fgahr/termchan/tchan/format/ansi"
 )
 
-// Board ID type
+// Bid is the type used for Board IDs
 type Bid int
 
-// Thread ID type
+// Tid is the type used for Thread IDs
 type Tid int
 
-// Global Post ID type
+// GPid is the type used for Global Post IDs
 type GPid int
 
-// Per-board (local) Post ID type
+// LPid is the type used for per-board (local) Post IDs
 type LPid int
 
+// Post holds the data associated with a post.
 type Post struct {
 	ID        GPid      `json:"-"`
-	InBoardId GPid      `json:"id"`
+	InBoardID GPid      `json:"id"`
 	Author    string    `json:"author"`
 	AuthorIP  string    `json:"-"`
 	Content   string    `json:"content"`
 	Timestamp time.Time `json:"time"`
 }
 
+// Thread holds the data associated with a thread.
 type Thread struct {
 	ID    Tid            `json:"-"`
 	Topic string         `json:"topic"`
@@ -36,10 +38,12 @@ type Thread struct {
 	Board *BoardOverview `json:"-"`
 }
 
+// OP returns a thread's original post to enable special formatting for it.
 func (t Thread) OP() Post {
 	return t.Posts[0]
 }
 
+// ThreadOverview holds all data relevant for an overview of a thread.
 type ThreadOverview struct {
 	Topic      string         `json:"topic"`
 	OP         Post           `json:"op"`
@@ -50,6 +54,7 @@ type ThreadOverview struct {
 	Board      *BoardOverview `json:"-"`
 }
 
+// Board holds all data associated with a board.
 type Board struct {
 	ID             Bid              `json:"-"`
 	Name           string           `json:"name"`
@@ -65,9 +70,11 @@ type BoardOverview struct {
 	HighlightColor ansi.Style `json:"-"`
 }
 
+// Boards holds (cached) data about available boards.
 var Boards map[string]*BoardOverview
 
-type HelpContent struct {
+// BoardParameters holds the globally active parameters of this instance.
+type BoardParameters struct {
 	Note        string           `json:"note"`
 	Boards      []*BoardOverview `json:"boards"`
 	PostSize    int              `json:"maxPostSize"`
@@ -75,7 +82,8 @@ type HelpContent struct {
 	ThreadLimit int              `json:"maxThreads"`
 }
 
-func GatherHelpContent() *HelpContent {
+// GatherBoardParameters collects active global parameters.
+func GatherBoardParameters() *BoardParameters {
 	var overviews []*BoardOverview
 	for _, board := range Boards {
 		overviews = append(overviews, board)
@@ -85,7 +93,7 @@ func GatherHelpContent() *HelpContent {
 	}
 	sort.Slice(overviews, cmp)
 
-	return &HelpContent{
+	return &BoardParameters{
 		Note:        "View non-json version for detailed help",
 		Boards:      overviews,
 		PostSize:    config.Conf.Max.PostSize,
@@ -94,4 +102,5 @@ func GatherHelpContent() *HelpContent {
 	}
 }
 
-var Help *HelpContent
+// BoardParams holds the active global parameters.
+var BoardParams *BoardParameters

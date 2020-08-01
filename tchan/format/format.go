@@ -12,8 +12,9 @@ import (
 	"github.com/fgahr/termchan/tchan/format/ansi"
 )
 
+// Formatter describes an entity presenting output in response to a request.
 type Formatter interface {
-	FormatHelp(h *data.HelpContent)
+	FormatWelcome(h *data.BoardParameters)
 	FormatThread(t *data.Thread)
 	FormatBoard(b *data.Board)
 	FormatError(err error)
@@ -25,7 +26,7 @@ type jsonFormatter struct {
 	err error
 }
 
-func newJsonFormatter(w http.ResponseWriter) *jsonFormatter {
+func newJSONFormatter(w http.ResponseWriter) *jsonFormatter {
 	enc := json.NewEncoder(w)
 	return &jsonFormatter{w, enc, nil}
 }
@@ -42,7 +43,7 @@ func (f *jsonFormatter) write(obj interface{}) {
 	}
 }
 
-func (f *jsonFormatter) FormatHelp(h *data.HelpContent) {
+func (f *jsonFormatter) FormatWelcome(h *data.BoardParameters) {
 	f.write(h)
 }
 
@@ -54,6 +55,7 @@ func (f *jsonFormatter) FormatBoard(b *data.Board) {
 	f.write(b)
 }
 
+// WrappedError wraps an error message to be formatted as JSON.
 type WrappedError struct {
 	Err string `json:"error"`
 }
@@ -127,7 +129,7 @@ var terminalBanner = []string{
 	cc + "                                      \"YUMMMMMP\"MMM    YMMYMM   \"\"` MMM     YM",
 }
 
-func (f *terminalFormatter) FormatHelp(h *data.HelpContent) {
+func (f *terminalFormatter) FormatWelcome(h *data.BoardParameters) {
 	for _, line := range terminalBanner {
 		f.write("%s%s\n", line, ansi.Reset)
 	}
@@ -167,7 +169,7 @@ func (f *terminalFormatter) FormatHelp(h *data.HelpContent) {
 
 func (f *terminalFormatter) writePost(p data.Post) {
 	f.write("[%s] %s wrote at %s\n",
-		f.hl(p.InBoardId), f.hl(p.Author), p.Timestamp.Format(time.ANSIC))
+		f.hl(p.InBoardID), f.hl(p.Author), p.Timestamp.Format(time.ANSIC))
 	f.write("\n")
 	f.write("%s\n", p.Content)
 }
@@ -182,7 +184,7 @@ func (f *terminalFormatter) writeThreadOverview(t *data.ThreadOverview) {
 		rep = "reply"
 	}
 	f.write("/%s/%d %s (%d %s) updated %s\n",
-		f.hl(t.Board.Name), t.OP.InBoardId, f.hl(t.Topic),
+		f.hl(t.Board.Name), t.OP.InBoardID, f.hl(t.Topic),
 		t.ReplyCount, rep, t.LastReply.Format(time.ANSIC))
 	f.insertDivider('-')
 	f.writePost(t.OP)
@@ -214,7 +216,7 @@ func (f *terminalFormatter) FormatThread(t *data.Thread) {
 		return
 	}
 
-	f.write("/%s/%d %s\n", f.hl(t.Board.Name), t.OP().InBoardId, f.hl(t.Topic))
+	f.write("/%s/%d %s\n", f.hl(t.Board.Name), t.OP().InBoardID, f.hl(t.Topic))
 	f.insertDivider('=')
 
 	for i, post := range t.Posts {
@@ -237,11 +239,12 @@ func (f *terminalFormatter) FormatError(err error) {
 	f.write("%sERROR:%s %s\n", ansi.FgRed, ansi.Reset, err)
 }
 
-func ChooseFormatter(r *http.Request, w http.ResponseWriter) Formatter {
+// Select determines and fetches the appropriate output formatter for a request.
+func Select(r *http.Request, w http.ResponseWriter) Formatter {
 	format := r.URL.Query().Get("format")
 	switch format {
 	case "json":
-		return newJsonFormatter(w)
+		return newJSONFormatter(w)
 	default:
 		return newTerminalFormatter(w)
 	}

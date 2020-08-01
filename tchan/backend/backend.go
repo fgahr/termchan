@@ -117,6 +117,7 @@ WHERE NOT EXISTS(SELECT 1 FROM board WHERE name = ?);
 	return nil
 }
 
+// FetchBoardIDs inserts known boards into a board overview map.
 func FetchBoardIDs() (map[string]*data.BoardOverview, error) {
 	boards := make(map[string]*data.BoardOverview)
 	var err error
@@ -140,7 +141,8 @@ func FetchBoardIDs() (map[string]*data.BoardOverview, error) {
 	return boards, nil
 }
 
-func GetThreadId(boardID data.Bid, inBoardPostID data.LPid) (data.Tid, bool, error) {
+// GetThreadID finds the db-side thread ID from a pair of board and in-board ID.
+func GetThreadID(boardID data.Bid, inBoardPostID data.LPid) (data.Tid, bool, error) {
 	rows, err := backend.Query(`
 SELECT t.id
 FROM thread t
@@ -165,6 +167,7 @@ LIMIT 1;
 	return id, true, nil
 }
 
+// GetBoard fetches the data required to print a board overview.
 func GetBoard(boardID data.Bid) (*data.Board, error) {
 	board := data.Board{ID: boardID}
 	board.ActiveThreads = []data.ThreadOverview{}
@@ -205,20 +208,20 @@ LIMIT ?;
 
 	for threadRows.Next() {
 		t := data.ThreadOverview{}
-		var created_ts, reply_ts string
-		err = threadRows.Scan(&t.ThreadID, &t.Topic, &t.ReplyCount, &created_ts, &reply_ts,
-			&t.OP.InBoardId, &t.OP.Author, &t.OP.Content)
+		var createdTS, replyTS string
+		err = threadRows.Scan(&t.ThreadID, &t.Topic, &t.ReplyCount, &createdTS, &replyTS,
+			&t.OP.InBoardID, &t.OP.Author, &t.OP.Content)
 		if err != nil {
 			return &board, errors.Wrap(err, "failed to extract thread summary")
 		}
-		if created, err := time.Parse(time.RFC3339, created_ts); err != nil {
+		if created, err := time.Parse(time.RFC3339, createdTS); err != nil {
 			return &board, errors.Wrap(err, "malformed date string in thread table (created_at)")
 		} else {
 			t.Started = created
 			t.OP.Timestamp = created
 		}
 
-		if latest, err := time.Parse(time.RFC3339, reply_ts); err != nil {
+		if latest, err := time.Parse(time.RFC3339, replyTS); err != nil {
 			return &board, errors.Wrap(err, "malformed date string in thread table (latest_reply)")
 		} else {
 			t.LastReply = latest
@@ -231,18 +234,19 @@ LIMIT ?;
 	return &board, nil
 }
 
-func GetThread(threadId data.Tid) (*data.Thread, error) {
+// GetThread fetches all data required for a thread overview.
+func GetThread(threadID data.Tid) (*data.Thread, error) {
 	var err error
 	var thread data.Thread
 
-	threadRows, err := backend.Query("SELECT id, topic FROM thread WHERE id = ?;", threadId)
+	threadRows, err := backend.Query("SELECT id, topic FROM thread WHERE id = ?;", threadID)
 	if err != nil {
-		return &thread, errors.Wrapf(err, "couldn't find thread with ID %d", threadId)
+		return &thread, errors.Wrapf(err, "couldn't find thread with ID %d", threadID)
 	}
 	defer threadRows.Close()
 
 	if !threadRows.Next() {
-		return &thread, errors.Errorf("no thread with ID: %d", threadId)
+		return &thread, errors.Errorf("no thread with ID: %d", threadID)
 	}
 	threadRows.Scan(&thread.ID, &thread.Topic)
 	threadRows.Close()
@@ -250,15 +254,15 @@ func GetThread(threadId data.Tid) (*data.Thread, error) {
 	postRows, err := backend.Query(`
 SELECT id, in_board_id, author, content, created_at FROM post
 WHERE post.thread_id = ?
-ORDER BY post.created_at ASC;`, threadId)
+ORDER BY post.created_at ASC;`, threadID)
 	if err != nil {
-		return &thread, errors.Wrapf(err, "unable to find posts for thread (id=%d)", threadId)
+		return &thread, errors.Wrapf(err, "unable to find posts for thread (id=%d)", threadID)
 	}
 	defer postRows.Close()
 	for postRows.Next() {
 		var post data.Post
 		ts := ""
-		err = postRows.Scan(&post.ID, &post.InBoardId, &post.Author, &post.Content, &ts)
+		err = postRows.Scan(&post.ID, &post.InBoardID, &post.Author, &post.Content, &ts)
 		if err != nil {
 			log.Println("unable to extract post data from database row")
 			continue
@@ -275,10 +279,11 @@ ORDER BY post.created_at ASC;`, threadId)
 	return &thread, err
 }
 
-func CreateThread(boardId data.Bid, topic string) (data.Tid, error) {
-	result, err := backend.Exec("INSERT INTO thread (board_id, topic) VALUES (?, ?);", boardId, topic)
+// CreateThread creates a new thread on the selected board with the given topic.
+func CreateThread(boardID data.Bid, topic string) (data.Tid, error) {
+	result, err := backend.Exec("INSERT INTO thread (board_id, topic) VALUES (?, ?);", boardID, topic)
 	if err != nil {
-		return 0, errors.Wrapf(err, "failed to create thread on board %d with topic '%s'", boardId, topic)
+		return 0, errors.Wrapf(err, "failed to create thread on board %d with topic '%s'", boardID, topic)
 	}
 	id, err := result.LastInsertId()
 	if err != nil {
@@ -287,10 +292,11 @@ func CreateThread(boardId data.Bid, topic string) (data.Tid, error) {
 	return data.Tid(id), nil
 }
 
-func AddReplyToThread(threadId data.Tid, post *data.Post) error {
+// AddReplyToThread adds a reply to an existing thread.
+func AddReplyToThread(threadID data.Tid, post *data.Post) error {
 	result, err := backend.Exec(
 		"INSERT INTO post (thread_id, author, author_ip, content) VALUES (?, ?, ?, ?);",
-		threadId, post.Author, post.AuthorIP, post.Content)
+		threadID, post.Author, post.AuthorIP, post.Content)
 	if err != nil {
 		return errors.Wrapf(err, "failed to persist post {%v}", post)
 	} else if n, _ := result.RowsAffected(); n == 0 {
@@ -304,6 +310,7 @@ func AddReplyToThread(threadId data.Tid, post *data.Post) error {
 	return nil
 }
 
+// Connect sets up a database connection.
 func Connect() error {
 	dbFile := config.Conf.DBFile
 	var err error
@@ -331,6 +338,7 @@ func Connect() error {
 	return nil
 }
 
+// Shutdown closes the database connection.
 func Shutdown() error {
 	return backend.Close()
 }

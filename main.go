@@ -28,7 +28,6 @@ func main() {
 	}
 
 	router := mux.NewRouter()
-	router.HandleFunc("/help", tchan.HandleHelp).Methods(http.MethodGet)
 	router.HandleFunc("/", tchan.HandleWelcome).Methods(http.MethodGet)
 	router.HandleFunc("/{board:[a-z]+}", tchan.ViewBoard).Methods(http.MethodGet)
 	router.HandleFunc("/{board:[a-z]+}/", tchan.ViewBoard).Methods(http.MethodGet)
