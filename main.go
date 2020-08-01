@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/fgahr/termchan/tchan"
-	. "github.com/fgahr/termchan/tchan/config"
+	"github.com/fgahr/termchan/tchan/config"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 )
@@ -26,8 +26,8 @@ func main() {
 	router.HandleFunc("/{board:[a-z]+}/{id:[0-9]+}", tchan.ViewThread).Methods(http.MethodGet)
 	router.HandleFunc("/{board:[a-z]+}/{id:[0-9]+}", tchan.ReplyToThread).Methods(http.MethodPost)
 
-	log.Printf("Serving HTTP on %s\n", Conf.PortString())
-	err = http.ListenAndServe(Conf.PortString(), router)
+	log.Printf("Serving HTTP on %s\n", config.Current.PortString())
+	err = http.ListenAndServe(config.Current.PortString(), router)
 	if err != nil {
 		log.Println(err)
 	}

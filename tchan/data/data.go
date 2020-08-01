@@ -96,9 +96,9 @@ func GatherBoardParameters() *BoardParameters {
 	return &BoardParameters{
 		Note:        "View non-json version for detailed help",
 		Boards:      overviews,
-		PostSize:    config.Conf.Max.PostSize,
-		ReplyLimit:  config.Conf.Max.PostsPerThread,
-		ThreadLimit: config.Conf.Max.ThreadsPerBoard,
+		PostSize:    config.Current.Max.PostSize,
+		ReplyLimit:  config.Current.Max.PostsPerThread,
+		ThreadLimit: config.Current.Max.ThreadsPerBoard,
 	}
 }
 

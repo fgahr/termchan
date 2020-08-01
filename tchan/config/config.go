@@ -24,8 +24,8 @@ type Opts struct {
 	Boards []Board
 }
 
-// Conf is the globally accessible current configuration.
-var Conf *Opts
+// Current is the currently active configuration.
+var Current *Opts
 
 // PortString gives the local address to be used in the web server setup.
 func (c *Opts) PortString() string {
@@ -51,5 +51,5 @@ func newDefault() *Opts {
 }
 
 func init() {
-	Conf = newDefault()
+	Current = newDefault()
 }

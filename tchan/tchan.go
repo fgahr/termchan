@@ -106,8 +106,8 @@ func ViewThread(w http.ResponseWriter, r *http.Request) {
 //  Gathers relevant data for creating a new post.
 func parseNewPost(r *http.Request) (data.Post, error) {
 	content := ""
-	if body, err := ioutil.ReadAll(r.Body); len(body) > config.Conf.Max.PostSize {
-		return data.Post{}, errors.Errorf("post exceeds %d byte limit", config.Conf.Max.PostSize)
+	if body, err := ioutil.ReadAll(r.Body); len(body) > config.Current.Max.PostSize {
+		return data.Post{}, errors.Errorf("post exceeds %d byte limit", config.Current.Max.PostSize)
 	} else if err != nil {
 		return data.Post{}, errors.Wrap(err, "failed to extract request body")
 	} else {

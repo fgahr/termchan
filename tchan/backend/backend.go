@@ -104,7 +104,7 @@ END;
 }
 
 func createDefaultBoards() error {
-	for _, b := range config.Conf.Boards {
+	for _, b := range config.Current.Boards {
 		_, err := backend.Exec(`
 INSERT INTO board(name, description, highlight_style)
 SELECT ?, ?, ?
@@ -200,7 +200,7 @@ WHERE t.board_id = ?
 AND t.num_replies > -1 AND t.num_replies <= ?
 ORDER BY t.last_reply DESC
 LIMIT ?;
-`, boardID, config.Conf.Max.PostsPerThread, config.Conf.Max.ThreadsPerBoard)
+`, boardID, config.Current.Max.PostsPerThread, config.Current.Max.ThreadsPerBoard)
 	if err != nil {
 		return &board, errors.Wrap(err, "failed to gather thread summaries")
 	}
@@ -312,7 +312,7 @@ func AddReplyToThread(threadID data.Tid, post *data.Post) error {
 
 // Connect sets up a database connection.
 func Connect() error {
-	dbFile := config.Conf.DBFile
+	dbFile := config.Current.DBFile
 	var err error
 
 	if _, err = os.Stat(dbFile); os.IsNotExist(err) {
