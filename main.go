@@ -3,7 +3,6 @@ package main
 import (
 	"log"
 	"net/http"
-	"os"
 
 	"github.com/fgahr/termchan/tchan"
 	. "github.com/fgahr/termchan/tchan/config"
@@ -13,15 +12,6 @@ import (
 
 func main() {
 	var err error
-
-	if Conf.LogFile != "" {
-		if f, err := os.OpenFile(Conf.LogFile, os.O_APPEND, 0600); err != nil {
-			log.Fatalf("unable to open log file %s", Conf.LogFile)
-		} else {
-			defer f.Close()
-			log.SetOutput(f)
-		}
-	}
 
 	if err = tchan.Initialize(); err != nil {
 		log.Fatal(errors.Wrap(err, "failed to initialize termchan"))

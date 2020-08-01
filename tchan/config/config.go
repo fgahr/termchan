@@ -2,37 +2,40 @@ package config
 
 import "fmt"
 
+// Board holds configuration options for a single board.
 type Board struct {
 	Name string `json:"name"`
 	Desc string `json:"desc"`
 	HiLi string `json:"-"`
 }
 
+// Limits holds global limits for this service.
 type Limits struct {
 	ThreadsPerBoard int `json:"threadsPerBoard"`
 	PostsPerThread  int `json:"postsPerThread"`
 	PostSize        int `json:"postSize"`
 }
 
-type Config struct {
-	Port    int     `json:"port"`
-	DBFile  string  `json:"dbFile"`
-	LogFile string  `json:"logFile"`
-	Max     Limits  `json:"limits"`
-	Boards  []Board `json:"boards"`
+// Opts holds a set of config options.
+type Opts struct {
+	Port   int
+	DBFile string
+	Max    Limits
+	Boards []Board
 }
 
-var Conf *Config
+// Conf is the globally accessible current configuration.
+var Conf *Opts
 
-func (c *Config) PortString() string {
+// PortString gives the local address to be used in the web server setup.
+func (c *Opts) PortString() string {
 	return fmt.Sprintf(":%d", c.Port)
 }
 
-func newDefault() *Config {
-	return &Config{
-		Port:    8088,
-		DBFile:  "file.db",
-		LogFile: "",
+func newDefault() *Opts {
+	return &Opts{
+		Port:   8088,
+		DBFile: "file.db",
 		Max: Limits{
 			ThreadsPerBoard: 50,
 			PostsPerThread:  128,
