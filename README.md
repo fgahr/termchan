@@ -121,7 +121,7 @@ $ curl -s 'localhost:8088/b/thread/1?format=json' | jq
 Reply to a thread:
 
 ```
-$ curl -s localhost:8088/b/thread/1 --data "OP is a gentleman and a scholar"
+$ curl -s localhost:8088/b/1 --data "OP is a gentleman and a scholar"
 foo
 ================================================================================
 [1] me wrote at Sat Jul 11 10:27:46 2020
