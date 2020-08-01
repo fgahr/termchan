@@ -1,0 +1,5 @@
+# Output binary
+termchan
+# sample dbs and query collections for development
+*.db
+*.sql
