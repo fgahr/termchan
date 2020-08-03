@@ -142,40 +142,38 @@ func (f *terminalFormatter) FormatWelcome(params *data.BoardParameters, hostname
 		color := b.HighlightColor
 		f.write("    /%s/ - %s\n", hl(color, b.Name), hl(color, b.Description))
 	}
-	f.insertDivider('-')
 
-	f.hlStyle = ansi.FgGreen
-	f.write("How do I use it?\n")
-	f.insertDivider('-')
-	f.write("%s\n", f.hl("Viewing"))
 	f.insertDivider('=')
-	f.write("%s a board (e.g. /g/):\n", f.hl("View"))
+	f.hlStyle = ansi.FgGreen
+	f.write("%s\n", f.hl("Viewing"))
+	f.insertDivider('-')
+	f.write("%s a board (e.g. /g/)\n", f.hl("View"))
 	f.write("  curl -s '%s/g'\n", hostname)
 	f.insertDivider('-')
-	f.write("%s a thread (e.g. thread #23 on /v/):\n", f.hl("View"))
+	f.write("%s a thread (e.g. thread #23 on /v/)\n", f.hl("View"))
 	f.write("  curl -s '%s/v/23'\n", hostname)
 	f.insertDivider('-')
-	f.write("%s a thread as JSON:\n", f.hl("View"))
+	f.write("%s a thread as JSON\n", f.hl("View"))
 	f.write("  curl -s '%s/d/69?format=json'\n", hostname)
-	f.insertDivider('-')
+	f.insertDivider('=')
 
 	f.hlStyle = ansi.FgBlue
 	f.write("%s\n", f.hl("Posting"))
-	f.insertDivider('=')
-	f.write("%s a reply to a thread:\n", f.hl("Post"))
+	f.insertDivider('-')
+	f.write("%s a reply to a thread (%s)\n", f.hl("Post"), f.hl("*"))
 	f.write("  curl -s '%s/g/42' \\\n", hostname)
 	f.write("      --data-urlencode \"format=json\" \\\n")
 	f.write("      --data-urlencode \"name=ilovebsd\" \\\n")
 	f.write("      --data-urlencode \"content=Have you considered OpenBSD?\"\n")
 	f.insertDivider('-')
-	f.write("%s (i.e. create) a thread:\n", f.hl("Post"))
+	f.write("%s (i.e. create) a thread (%s)\n", f.hl("Post"), f.hl("*"))
 	f.write("  curl -s '%s/b' \\\n", hostname)
 	f.write("      --data-urlencode \"name=m00t\" \\\n")
 	f.write("      --data-urlencode \"topic=Candlejack\" \\\n")
-	f.write("      --data-urlencode \"content=I'm not afraid of him. What's he gon-\"\n")
+	f.write("      --data-urlencode \"content=I'm not afraid of him, what's he gon-\"\n")
 	f.insertDivider('-')
-	f.write("%s: fields other than content are optional\n", f.hl("NOTE"))
-	f.insertDivider('-')
+	f.write("(%s) fields other than content are optional\n", f.hl("*"))
+	f.insertDivider('=')
 
 	f.write("%s %s!\n", hl(ansi.FgGreen, "HAVE"), hl(ansi.FgBlue, "FUN"))
 }

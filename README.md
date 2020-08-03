@@ -45,30 +45,30 @@ How do I use it?
 --------------------------------------------------------------------------------
 Viewing
 ================================================================================
-View a board (e.g. /g/):
+View a board (e.g. /g/)
   curl -s 'localhost:8088/g'
 --------------------------------------------------------------------------------
-View a thread (e.g. thread #23 on /v/):
+View a thread (e.g. thread #23 on /v/)
   curl -s 'localhost:8088/v/23'
 --------------------------------------------------------------------------------
-View a thread as JSON:
+View a thread as JSON
   curl -s 'localhost:8088/d/69?format=json'
 --------------------------------------------------------------------------------
 Posting
 ================================================================================
-Post a reply to a thread:
+Post a reply to a thread (*)
   curl -s 'localhost:8088/g/42' \
       --data-urlencode "format=json" \
       --data-urlencode "name=ilovebsd" \
       --data-urlencode "content=Have you considered OpenBSD?"
 --------------------------------------------------------------------------------
-Post (i.e. create) a thread:
+Post (i.e. create) a thread (*)
   curl -s 'localhost:8088/b' \
       --data-urlencode "name=m00t" \
       --data-urlencode "topic=Candlejack" \
-      --data-urlencode "content=I'm not afraid of him. What's he gon-"
+      --data-urlencode "content=I'm not afraid of him, what's he gon-"
 --------------------------------------------------------------------------------
-NOTE: fields other than content are optional
+(*) fields other than content are optional
 --------------------------------------------------------------------------------
 HAVE FUN!
 ```
