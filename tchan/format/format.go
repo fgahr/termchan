@@ -174,30 +174,8 @@ func (f *terminalFormatter) FormatWelcome(params *data.BoardParameters, hostname
 	f.write("      --data-urlencode \"topic=Candlejack\" \\\n")
 	f.write("      --data-urlencode \"content=I'm not afraid of him. What's he gon-\"\n")
 	f.insertDivider('-')
-	f.write("%s: only the content field is mandatory\n", f.hl("NOTE"))
+	f.write("%s: fields other than content are optional\n", f.hl("NOTE"))
 	f.insertDivider('-')
-
-	// f.write("Usage (* = HOST:PORT)\n")
-	// f.hlStyle = ansi.FgGreen
-	// f.write("    curl */b                                     (%s) board view\n", f.hl("GET"))
-	// f.write("    curl */b/1 -G --data-urlencode \"format=json\" (%s) thread view, JSON output\n", f.hl("GET"))
-	// f.write("    curl */b --data-urlencode \"topic=foo\"        (%s) create thread\n", f.hl("POST"))
-	// f.write("    curl */b/1 --data \"bar\"         (%s) reply to thread\n", f.hl("POST"))
-	// f.insertDivider('-')
-
-	// f.write("Parameters (* = mandatory, all others optional)\n")
-	// f.hlStyle = ansi.FgBlue
-	// f.write("    format=json                 (%s/%s) request JSON output\n", f.hl("GET"), f.hl("POST"))
-	// f.write("    name=m00t                       (%s) name when posting\n", f.hl("POST"))
-	// f.write("    topic=The%%20Game                (%s) topic when creating a thread\n", f.hl("POST"))
-	// f.write("    content=Hello%%2C%%20World%%21     (%s) content of a new thread or a reply\n", f.hl("POST"))
-	// f.insertDivider('-')
-
-	// f.write("Limits\n")
-	// f.write("    Post size (in bytes):          %6d\n", h.PostSize)
-	// f.write("    Thread count (per board):      %6d\n", h.ThreadLimit)
-	// f.write("    Reply count (per thread):      %6d\n", h.ReplyLimit)
-	// f.insertDivider('=')
 
 	f.write("%s %s!\n", hl(ansi.FgGreen, "HAVE"), hl(ansi.FgBlue, "FUN"))
 }

@@ -68,7 +68,7 @@ Post (i.e. create) a thread:
       --data-urlencode "topic=Candlejack" \
       --data-urlencode "content=I'm not afraid of him. What's he gon-"
 --------------------------------------------------------------------------------
-NOTE: only the content field is mandatory
+NOTE: fields other than content are optional
 --------------------------------------------------------------------------------
 HAVE FUN!
 ```
