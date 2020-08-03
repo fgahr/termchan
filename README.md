@@ -41,22 +41,35 @@ Boards
     /m/ - Meta
     /v/ - Games
 --------------------------------------------------------------------------------
-Usage (* = HOST:PORT)
-    curl */b                        (GET)  board view
-    curl */b/1                      (GET)  thread view
-    curl */b --data "foo"           (POST) create thread
-    curl */b/1 --data "bar"  (POST) reply to thread
+How do I use it?
 --------------------------------------------------------------------------------
-Parameters (optional, use as URL?PARAM=VALUE&...)
-    format=json                 (GET/POST) JSON output
-    name=m00t                       (POST) your name when posting
-    topic=The%20Game                (POST) topic when creating a thread
---------------------------------------------------------------------------------
-Limits
-    Post size (in bytes):            8192
-    Thread count (per board):          50
-    Reply count (per thread):         128
+Viewing
 ================================================================================
+View a board (e.g. /g/):
+  curl -s 'localhost:8088/g'
+--------------------------------------------------------------------------------
+View a thread (e.g. thread #23 on /v/):
+  curl -s 'localhost:8088/v/23'
+--------------------------------------------------------------------------------
+View a thread as JSON:
+  curl -s 'localhost:8088/d/69?format=json'
+--------------------------------------------------------------------------------
+Posting
+================================================================================
+Post a reply to a thread:
+  curl -s 'localhost:8088/g/42' \
+      --data-urlencode "format=json" \
+      --data-urlencode "name=ilovebsd" \
+      --data-urlencode "content=Have you considered OpenBSD?"
+--------------------------------------------------------------------------------
+Post (i.e. create) a thread:
+  curl -s 'localhost:8088/b' \
+      --data-urlencode "name=m00t" \
+      --data-urlencode "topic=Candlejack" \
+      --data-urlencode "content=I'm not afraid of him. What's he gon-"
+--------------------------------------------------------------------------------
+NOTE: only the content field is mandatory
+--------------------------------------------------------------------------------
 HAVE FUN!
 ```
 
@@ -66,7 +79,9 @@ The server starts listening on port `:8088` and has a couple of boards.
 They will be empty initially but you can add a thread via
 
 ```
-$ curl -s 'localhost:8088/b?topic=foo&name=me' --data 'This is my first post'
+$ curl -s 'localhost:8088/b'  \
+      --data-urlencode "name=me" \
+      --data-urlencode "content=This is my first post"
 foo
 ================================================================================
 [1] me wrote at Sat Jul 11 10:37:07 2020
@@ -99,40 +114,6 @@ $ curl -s 'localhost:8088/b?format=json' | jq
     }
   ]
 }
-```
-
-Thread view:
-
-```
-$ curl -s 'localhost:8088/b/thread/1?format=json' | jq
-{
-  "topic": "foo",
-  "posts": [
-    {
-      "id": 1,
-      "author": "me",
-      "content": "This is my first post",
-      "time": "2020-07-11T10:27:46Z"
-    }
-  ]
-}
-```
-
-Reply to a thread:
-
-```
-$ curl -s localhost:8088/b/1 --data "OP is a gentleman and a scholar"
-foo
-================================================================================
-[1] me wrote at Sat Jul 11 10:27:46 2020
-
-This is my first post
---------------------------------------------------------------------------------
-[2] Anonymous wrote at Sat Jul 11 10:30:47 2020
-
-OP is a gentleman and a scholar
-================================================================================
-1 reply
 ```
 
 # TODOs

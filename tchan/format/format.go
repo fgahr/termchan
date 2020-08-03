@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/fgahr/termchan/tchan/data"
@@ -14,7 +15,7 @@ import (
 
 // Formatter describes an entity presenting output in response to a request.
 type Formatter interface {
-	FormatWelcome(h *data.BoardParameters)
+	FormatWelcome(params *data.BoardParameters, hostname string)
 	FormatThread(t *data.Thread)
 	FormatBoard(b *data.Board)
 	FormatError(err error)
@@ -43,8 +44,8 @@ func (f *jsonFormatter) write(obj interface{}) {
 	}
 }
 
-func (f *jsonFormatter) FormatWelcome(h *data.BoardParameters) {
-	f.write(h)
+func (f *jsonFormatter) FormatWelcome(params *data.BoardParameters, hostname string) {
+	f.write(params)
 }
 
 func (f *jsonFormatter) FormatThread(t *data.Thread) {
@@ -129,7 +130,7 @@ var terminalBanner = []string{
 	cc + "                                      \"YUMMMMMP\"MMM    YMMYMM   \"\"` MMM     YM",
 }
 
-func (f *terminalFormatter) FormatWelcome(h *data.BoardParameters) {
+func (f *terminalFormatter) FormatWelcome(params *data.BoardParameters, hostname string) {
 	for _, line := range terminalBanner {
 		f.write("%s%s\n", line, ansi.Reset)
 	}
@@ -137,32 +138,66 @@ func (f *terminalFormatter) FormatWelcome(h *data.BoardParameters) {
 	f.write("Welcome!\n")
 	f.insertDivider('=')
 	f.write("Boards\n")
-	for _, b := range h.Boards {
+	for _, b := range params.Boards {
 		color := b.HighlightColor
 		f.write("    /%s/ - %s\n", hl(color, b.Name), hl(color, b.Description))
 	}
 	f.insertDivider('-')
 
-	f.write("Usage (* = HOST:PORT)\n")
 	f.hlStyle = ansi.FgGreen
-	f.write("    curl */b                        (%s)  board view\n", f.hl("GET"))
-	f.write("    curl */b/1                      (%s)  thread view\n", f.hl("GET"))
-	f.write("    curl */b --data \"foo\"           (%s) create thread\n", f.hl("POST"))
-	f.write("    curl */b/1 --data \"bar\"         (%s) reply to thread\n", f.hl("POST"))
+	f.write("How do I use it?\n")
 	f.insertDivider('-')
-
-	f.write("Parameters (optional, use as URL?PARAM=VALUE&...)\n")
-	f.hlStyle = ansi.FgBlue
-	f.write("    format=json                 (%s/%s) JSON output\n", f.hl("GET"), f.hl("POST"))
-	f.write("    name=m00t                       (%s) your name when posting\n", f.hl("POST"))
-	f.write("    topic=The%%20Game                (%s) topic when creating a thread\n", f.hl("POST"))
-	f.insertDivider('-')
-
-	f.write("Limits\n")
-	f.write("    Post size (in bytes):          %6d\n", h.PostSize)
-	f.write("    Thread count (per board):      %6d\n", h.ThreadLimit)
-	f.write("    Reply count (per thread):      %6d\n", h.ReplyLimit)
+	f.write("%s\n", f.hl("Viewing"))
 	f.insertDivider('=')
+	f.write("%s a board (e.g. /g/):\n", f.hl("View"))
+	f.write("  curl -s '%s/g'\n", hostname)
+	f.insertDivider('-')
+	f.write("%s a thread (e.g. thread #23 on /v/):\n", f.hl("View"))
+	f.write("  curl -s '%s/v/23'\n", hostname)
+	f.insertDivider('-')
+	f.write("%s a thread as JSON:\n", f.hl("View"))
+	f.write("  curl -s '%s/d/69?format=json'\n", hostname)
+	f.insertDivider('-')
+
+	f.hlStyle = ansi.FgBlue
+	f.write("%s\n", f.hl("Posting"))
+	f.insertDivider('=')
+	f.write("%s a reply to a thread:\n", f.hl("Post"))
+	f.write("  curl -s '%s/g/42' \\\n", hostname)
+	f.write("      --data-urlencode \"format=json\" \\\n")
+	f.write("      --data-urlencode \"name=ilovebsd\" \\\n")
+	f.write("      --data-urlencode \"content=Have you considered OpenBSD?\"\n")
+	f.insertDivider('-')
+	f.write("%s (i.e. create) a thread:\n", f.hl("Post"))
+	f.write("  curl -s '%s/b' \\\n", hostname)
+	f.write("      --data-urlencode \"name=m00t\" \\\n")
+	f.write("      --data-urlencode \"topic=Candlejack\" \\\n")
+	f.write("      --data-urlencode \"content=I'm not afraid of him. What's he gon-\"\n")
+	f.insertDivider('-')
+	f.write("%s: only the content field is mandatory\n", f.hl("NOTE"))
+	f.insertDivider('-')
+
+	// f.write("Usage (* = HOST:PORT)\n")
+	// f.hlStyle = ansi.FgGreen
+	// f.write("    curl */b                                     (%s) board view\n", f.hl("GET"))
+	// f.write("    curl */b/1 -G --data-urlencode \"format=json\" (%s) thread view, JSON output\n", f.hl("GET"))
+	// f.write("    curl */b --data-urlencode \"topic=foo\"        (%s) create thread\n", f.hl("POST"))
+	// f.write("    curl */b/1 --data \"bar\"         (%s) reply to thread\n", f.hl("POST"))
+	// f.insertDivider('-')
+
+	// f.write("Parameters (* = mandatory, all others optional)\n")
+	// f.hlStyle = ansi.FgBlue
+	// f.write("    format=json                 (%s/%s) request JSON output\n", f.hl("GET"), f.hl("POST"))
+	// f.write("    name=m00t                       (%s) name when posting\n", f.hl("POST"))
+	// f.write("    topic=The%%20Game                (%s) topic when creating a thread\n", f.hl("POST"))
+	// f.write("    content=Hello%%2C%%20World%%21     (%s) content of a new thread or a reply\n", f.hl("POST"))
+	// f.insertDivider('-')
+
+	// f.write("Limits\n")
+	// f.write("    Post size (in bytes):          %6d\n", h.PostSize)
+	// f.write("    Thread count (per board):      %6d\n", h.ThreadLimit)
+	// f.write("    Reply count (per thread):      %6d\n", h.ReplyLimit)
+	// f.insertDivider('=')
 
 	f.write("%s %s!\n", hl(ansi.FgGreen, "HAVE"), hl(ansi.FgBlue, "FUN"))
 }
@@ -240,8 +275,8 @@ func (f *terminalFormatter) FormatError(err error) {
 }
 
 // Select determines and fetches the appropriate output formatter for a request.
-func Select(r *http.Request, w http.ResponseWriter) Formatter {
-	format := r.URL.Query().Get("format")
+func Select(query url.Values, w http.ResponseWriter) Formatter {
+	format := query.Get("format")
 	switch format {
 	case "json":
 		return newJSONFormatter(w)

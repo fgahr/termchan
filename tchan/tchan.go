@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
 	"strconv"
 	"time"
 
@@ -35,13 +36,13 @@ func Shutdown() error {
 
 // HandleWelcome returns a welcome message.
 func HandleWelcome(w http.ResponseWriter, r *http.Request) {
-	f := format.Select(r, w)
-	f.FormatWelcome(data.BoardParams)
+	f := format.Select(r.URL.Query(), w)
+	f.FormatWelcome(data.BoardParams, r.Host)
 }
 
 // ViewBoard returns a board overview.
 func ViewBoard(w http.ResponseWriter, r *http.Request) {
-	f := format.Select(r, w)
+	f := format.Select(r.URL.Query(), w)
 	bname := mux.Vars(r)["board"]
 	if board, ok := data.Boards[bname]; ok {
 		b, err := backend.GetBoard(board.ID)
@@ -71,7 +72,7 @@ func boardPostIDFromRequest(r *http.Request) (string, data.LPid, bool) {
 
 // ViewThread returns a thread overview.
 func ViewThread(w http.ResponseWriter, r *http.Request) {
-	f := format.Select(r, w)
+	f := format.Select(r.URL.Query(), w)
 	bname, opID, ok := boardPostIDFromRequest(r)
 	board, ok := data.Boards[bname]
 	if !ok {
@@ -103,19 +104,24 @@ func ViewThread(w http.ResponseWriter, r *http.Request) {
 	f.FormatThread(thread)
 }
 
+func parsePostParameters(r *http.Request) (url.Values, error) {
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to read request body")
+	}
+	values, err := url.ParseQuery(string(body))
+	return values, errors.Wrap(err, "failed to parse request body")
+}
+
 //  Gathers relevant data for creating a new post.
-func parseNewPost(r *http.Request) (data.Post, error) {
-	content := ""
-	if body, err := ioutil.ReadAll(r.Body); len(body) > config.Current.Max.PostSize {
-		return data.Post{}, errors.Errorf("post exceeds %d byte limit", config.Current.Max.PostSize)
-	} else if err != nil {
-		return data.Post{}, errors.Wrap(err, "failed to extract request body")
-	} else {
-		content = string(body)
+func assembleNewPost(values url.Values) (data.Post, error) {
+	content := values.Get("content")
+	if len(content) > config.Current.Max.PostSize {
+		return data.Post{}, errors.Errorf("post content exceeds %d byte limit", config.Current.Max.PostSize)
 	}
 
 	author := "Anonymous"
-	if name := r.URL.Query().Get("name"); name != "" {
+	if name := values.Get("name"); name != "" {
 		author = name
 	}
 	return data.Post{Author: author, AuthorIP: "", Content: content, Timestamp: time.Now()}, nil
@@ -123,7 +129,14 @@ func parseNewPost(r *http.Request) (data.Post, error) {
 
 // CreateThread handles the creation of new threads on request.
 func CreateThread(w http.ResponseWriter, r *http.Request) {
-	f := format.Select(r, w)
+	params, err := parsePostParameters(r)
+	f := format.Select(params, w)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		// TODO: wrap error
+		f.FormatError(err)
+	}
+
 	bname, _, _ := boardPostIDFromRequest(r)
 	board, ok := data.Boards[bname]
 	if !ok {
@@ -132,7 +145,7 @@ func CreateThread(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	topic := r.URL.Query().Get("topic")
+	topic := params.Get("topic")
 	tID, err := backend.CreateThread(board.ID, topic)
 	if err != nil {
 		log.Println(err)
@@ -141,7 +154,7 @@ func CreateThread(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	post, err := parseNewPost(r)
+	post, err := assembleNewPost(params)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		f.FormatError(err)
@@ -170,7 +183,14 @@ func CreateThread(w http.ResponseWriter, r *http.Request) {
 
 // ReplyToThread handles responses to existing threads.
 func ReplyToThread(w http.ResponseWriter, r *http.Request) {
-	f := format.Select(r, w)
+	params, err := parsePostParameters(r)
+	f := format.Select(params, w)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		// TODO: wrap error
+		f.FormatError(err)
+	}
+
 	bname, opID, ok := boardPostIDFromRequest(r)
 	board, ok := data.Boards[bname]
 	if !ok {
@@ -190,7 +210,7 @@ func ReplyToThread(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	post, err := parseNewPost(r)
+	post, err := assembleNewPost(params)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		f.FormatError(err)
