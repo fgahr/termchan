@@ -24,6 +24,11 @@ type Server struct {
 	router *mux.Router
 }
 
+// Formatter describes an entity in charge of formatting a server response.
+type Formatter interface {
+	// TODO
+}
+
 // NewServer creates a new server without configuration or backend.
 // In order to be usable these still need to be set up.
 func NewServer() *Server {
@@ -38,5 +43,40 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) routes() {
-	// TODO
+	s.router.StrictSlash(false)
+	s.router.HandleFunc("/", s.handleWelcome()).Methods("GET")
+	s.router.HandleFunc("/{board:[a-zA-Z0-9]+}", s.handleViewBoard()).Methods("GET")
+	s.router.HandleFunc("/{board:[a-zA-Z0-9]+}", s.handleCreateThread()).Methods("POST")
+	s.router.HandleFunc("/{board:[a-zA-Z0-9]+/{id:[0-9]+}", s.handleViewThread()).Methods("GET")
+	s.router.HandleFunc("/{board:[a-zA-Z0-9]+/{id:[0-9]+}", s.handleReplyToThread()).Methods("POST")
+}
+
+func (s *Server) handleWelcome() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// TODO
+	}
+}
+
+func (s *Server) handleViewBoard() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// TODO
+	}
+}
+
+func (s *Server) handleViewThread() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// TODO
+	}
+}
+
+func (s *Server) handleCreateThread() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// TODO
+	}
+}
+
+func (s *Server) handleReplyToThread() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// TODO
+	}
 }
