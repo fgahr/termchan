@@ -8,13 +8,14 @@ import (
 
 // Config deals with all variable and optional aspects of termchan.
 type Config struct {
-	// Working directory
-	PWD string
+	WorkingDirectory string
 }
 
 // Backend handles all database interactions.
 type Backend interface {
-	// TODO
+	GetBoardMetaData(boardName string) (BoardMetaData, error)
+	GetBoardOverview(boardName string) error
+	GetThread(boardName string, threadID int) error
 }
 
 // Server connects all aspects of the termchan application.
@@ -26,7 +27,10 @@ type Server struct {
 
 // Formatter describes an entity in charge of formatting a server response.
 type Formatter interface {
-	// TODO
+	FormatWelcome()
+	FormatThread()
+	FormatBoard()
+	FormatError()
 }
 
 // NewServer creates a new server without configuration or backend.
@@ -43,12 +47,15 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) routes() {
-	s.router.StrictSlash(false)
 	s.router.HandleFunc("/", s.handleWelcome()).Methods("GET")
 	s.router.HandleFunc("/{board:[a-zA-Z0-9]+}", s.handleViewBoard()).Methods("GET")
+	s.router.HandleFunc("/{board:[a-zA-Z0-9]+}/", s.handleViewBoard()).Methods("GET")
 	s.router.HandleFunc("/{board:[a-zA-Z0-9]+}", s.handleCreateThread()).Methods("POST")
+	s.router.HandleFunc("/{board:[a-zA-Z0-9]+}/", s.handleCreateThread()).Methods("POST")
 	s.router.HandleFunc("/{board:[a-zA-Z0-9]+/{id:[0-9]+}", s.handleViewThread()).Methods("GET")
+	s.router.HandleFunc("/{board:[a-zA-Z0-9]+/{id:[0-9]+}/", s.handleViewThread()).Methods("GET")
 	s.router.HandleFunc("/{board:[a-zA-Z0-9]+/{id:[0-9]+}", s.handleReplyToThread()).Methods("POST")
+	s.router.HandleFunc("/{board:[a-zA-Z0-9]+/{id:[0-9]+}/", s.handleReplyToThread()).Methods("POST")
 }
 
 func (s *Server) handleWelcome() http.HandlerFunc {
