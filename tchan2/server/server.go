@@ -5,21 +5,12 @@ import (
 
 	"github.com/fgahr/termchan/tchan2"
 	"github.com/fgahr/termchan/tchan2/config"
+	"github.com/fgahr/termchan/tchan2/fmt"
 	"github.com/gorilla/mux"
 )
 
-// TODO: Move to a more appropriate place
-//
-// Writer describes an entity in charge of writing a server response.
-type Writer interface {
-	WriteWelcome(boardData []tchan2.BoardMetaData) error
-	WriteThread(thread tchan2.ThreadFull) error
-	WriteBoard(board tchan2.BoardOverview) error
-	WriteError(err error) error
-}
-
 // SelectWriter chooses an appropriate writer for the given request.
-func SelectWriter(w http.ResponseWriter, r *http.Request) Writer {
+func SelectWriter(w http.ResponseWriter, r *http.Request) fmt.Writer {
 	// TODO
 	return nil
 }

@@ -1,6 +1,11 @@
-package format
+package fmt
 
-import "fmt"
+import (
+	"fmt"
+	"io"
+
+	"github.com/fgahr/termchan/tchan2"
+)
 
 // Available ANSI styles
 const (
@@ -15,6 +20,19 @@ const (
 	ansiReset = "\u001b[0m"
 )
 
+// Writer describes an entity in charge of writing a server response.
+type Writer interface {
+	WriteWelcome(boardData []tchan2.BoardMetaData) error
+	WriteThread(thread tchan2.ThreadFull) error
+	WriteBoard(board tchan2.BoardOverview) error
+	WriteError(err error) error
+}
+
+// GetWriter finds a named writer as expected for format specifications.
+func GetWriter(name string, w io.Writer) Writer {
+	return newJSONWriter(w)
+}
+
 // Style handles formatting of a piece of output.
 type Style interface {
 	FormatANSI(s string) string
@@ -28,8 +46,7 @@ func (sty style) FormatANSI(s string) string {
 
 // GetStyle finds a formatting style by name.
 func GetStyle(name string) Style {
-	s, ok := styleNames[name]
-	if ok {
+	if s, ok := styleNames[name]; ok {
 		return s
 	}
 	return style(fgWhite)
