@@ -321,10 +321,8 @@ func Connect() error {
 		return errors.Wrapf(err, "unable to locate or create database file: %s", dbFile)
 	}
 
-	if db, err := sql.Open("sqlite3", dbFile); err != nil {
+	if backend, err = sql.Open("sqlite3", dbFile); err != nil {
 		return errors.Wrapf(err, "unable to open database file: %s", dbFile)
-	} else {
-		backend = db
 	}
 
 	if err = setupBackendSchema(); err != nil {

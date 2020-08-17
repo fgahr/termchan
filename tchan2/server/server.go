@@ -1,36 +1,41 @@
-package tchan2
+package server
 
 import (
 	"net/http"
 
+	"github.com/fgahr/termchan/tchan2"
+	"github.com/fgahr/termchan/tchan2/config"
 	"github.com/gorilla/mux"
 )
 
-// Config deals with all variable and optional aspects of termchan.
-type Config struct {
-	WorkingDirectory string
+// TODO: Move to a more appropriate place
+//
+// Writer describes an entity in charge of writing a server response.
+type Writer interface {
+	WriteWelcome(boardData []tchan2.BoardMetaData) error
+	WriteThread(thread tchan2.ThreadFull) error
+	WriteBoard(board tchan2.BoardOverview) error
+	WriteError(err error) error
+}
+
+// SelectWriter chooses an appropriate writer for the given request.
+func SelectWriter(w http.ResponseWriter, r *http.Request) Writer {
+	// TODO
+	return nil
 }
 
 // Backend handles all database interactions.
 type Backend interface {
-	GetBoardMetaData(boardName string) (BoardMetaData, error)
+	GetBoardMetaData(boardName string) (tchan2.BoardMetaData, error)
 	GetBoardOverview(boardName string) error
 	GetThread(boardName string, threadID int) error
 }
 
 // Server connects all aspects of the termchan application.
 type Server struct {
-	Conf   *Config
+	Conf   *config.Opts
 	DB     Backend
 	router *mux.Router
-}
-
-// Formatter describes an entity in charge of formatting a server response.
-type Formatter interface {
-	FormatWelcome()
-	FormatThread()
-	FormatBoard()
-	FormatError()
 }
 
 // NewServer creates a new server without configuration or backend.
