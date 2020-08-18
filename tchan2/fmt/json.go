@@ -19,7 +19,7 @@ func (w jsonWriter) write(obj interface{}) error {
 	return w.enc.Encode(obj)
 }
 
-func (w jsonWriter) WriteWelcome(boardData []tchan2.BoardMetaData) error {
+func (w jsonWriter) WriteWelcome(boardData []tchan2.BoardConfig) error {
 	return w.write(boardData)
 }
 

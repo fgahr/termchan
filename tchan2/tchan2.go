@@ -4,8 +4,8 @@ import (
 	"time"
 )
 
-// BoardMetaData contains board data that doesn't refer to its contents.
-type BoardMetaData struct {
+// BoardConfig contains board data that doesn't refer to its contents.
+type BoardConfig struct {
 	Name            string `json:"name"`
 	Description     string `json:"description"`
 	HighlightStyle  string `json:"-"`
@@ -21,11 +21,11 @@ type Post struct {
 	Content   string `json:"content"`
 }
 
-// ThreadFull contains all data of a single thread.
-type ThreadFull struct {
-	Board BoardMetaData `json:"board"`
-	Topic string        `json:"topic"`
-	Posts []Post        `json:"posts"`
+// Thread contains all data of a single thread.
+type Thread struct {
+	Board BoardConfig `json:"board"`
+	Topic string      `json:"topic"`
+	Posts []Post      `json:"posts"`
 }
 
 // ThreadOverview contains superficial thread data.
@@ -37,6 +37,6 @@ type ThreadOverview struct {
 
 // BoardOverview contains superficial board data
 type BoardOverview struct {
-	MetaData BoardMetaData    `json:"meta"`
+	MetaData BoardConfig      `json:"meta"`
 	Threads  []ThreadOverview `json:"threads"`
 }

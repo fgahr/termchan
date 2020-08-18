@@ -22,7 +22,7 @@ const (
 
 // Writer describes an entity in charge of writing a server response.
 type Writer interface {
-	WriteWelcome(boardData []tchan2.BoardMetaData) error
+	WriteWelcome(boardData []tchan2.BoardConfig) error
 	WriteThread(thread tchan2.ThreadFull) error
 	WriteBoard(board tchan2.BoardOverview) error
 	WriteError(err error) error

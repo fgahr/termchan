@@ -11,13 +11,13 @@ import (
 
 // SelectWriter chooses an appropriate writer for the given request.
 func SelectWriter(w http.ResponseWriter, r *http.Request) fmt.Writer {
-	// TODO
-	return nil
+	format := r.URL.Query().Get("format")
+	return fmt.GetWriter(format, w)
 }
 
 // Backend handles all database interactions.
 type Backend interface {
-	GetBoardMetaData(boardName string) (tchan2.BoardMetaData, error)
+	GetBoardMetaData(boardName string) (tchan2.BoardConfig, error)
 	GetBoardOverview(boardName string) error
 	GetThread(boardName string, threadID int) error
 }
@@ -31,8 +31,8 @@ type Server struct {
 
 // NewServer creates a new server without configuration or backend.
 // In order to be usable these still need to be set up.
-func NewServer() *Server {
-	s := &Server{router: mux.NewRouter()}
+func NewServer(opts *config.Opts) *Server {
+	s := &Server{Conf: opts, router: mux.NewRouter()}
 	s.routes()
 	return s
 }

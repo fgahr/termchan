@@ -12,7 +12,7 @@ import (
 // Opts deals with all variable and optional aspects of termchan.
 type Opts struct {
 	WorkingDirectory string
-	Boards           map[string]tchan2.BoardMetaData
+	Boards           map[string]tchan2.BoardConfig
 }
 
 func (c *Opts) connectDB() (*sql.DB, error) {
@@ -71,7 +71,7 @@ func (c *Opts) Read() error {
 
 	// We initialize it here because we want to use this function for
 	// refreshing a stale config as well.
-	c.Boards = make(map[string]tchan2.BoardMetaData)
+	c.Boards = make(map[string]tchan2.BoardConfig)
 
 	boardRows, err := db.Query(`
 SELECT name, descrition, style, max_threads, max_posts
@@ -83,7 +83,7 @@ FROM board;
 	defer boardRows.Close()
 
 	for boardRows.Next() {
-		var md tchan2.BoardMetaData
+		var md tchan2.BoardConfig
 		err = boardRows.Scan(&md.Name, &md.Description, &md.HighlightStyle, &md.MaxThreadCount, &md.MaxThreadLength)
 		if err != nil {
 			return errors.Wrap(err, "failed to read board definition from config file")
