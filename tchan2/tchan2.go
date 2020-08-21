@@ -4,21 +4,22 @@ import (
 	"time"
 )
 
-// BoardConfig contains board data that doesn't refer to its contents.
+// BoardConfig contains the configured settings for a board.
 type BoardConfig struct {
 	Name            string `json:"name"`
 	Description     string `json:"description"`
 	HighlightStyle  string `json:"-"`
 	MaxThreadCount  int    `json:"maxThreadCount"`
 	MaxThreadLength int    `json:"maxThreadLength"`
+	MaxPostBytes    int    `json:"maxPostBytes"`
 }
 
 // Post contains all data of a single post.
 type Post struct {
-	Author    string `json:"author"`
-	ID        int    `json:"id"`
-	Timestamp string `json:"timestamp"`
-	Content   string `json:"content"`
+	Author    string    `json:"author"`
+	ID        int       `json:"id"`
+	Timestamp time.Time `json:"timestamp"`
+	Content   string    `json:"content"`
 }
 
 // Thread contains all data of a single thread.
@@ -35,7 +36,7 @@ type ThreadOverview struct {
 	Active time.Time `json:"active"`
 }
 
-// BoardOverview contains superficial board data
+// BoardOverview contains superficial board data.
 type BoardOverview struct {
 	MetaData BoardConfig      `json:"meta"`
 	Threads  []ThreadOverview `json:"threads"`

@@ -2,8 +2,10 @@ package config
 
 import (
 	"database/sql"
+	"log"
 	"os"
 	"path/filepath"
+	"sort"
 
 	"github.com/fgahr/termchan/tchan2"
 	"github.com/pkg/errors"
@@ -12,7 +14,7 @@ import (
 // Opts deals with all variable and optional aspects of termchan.
 type Opts struct {
 	WorkingDirectory string
-	Boards           map[string]tchan2.BoardConfig
+	Boards           []tchan2.BoardConfig
 }
 
 func (c *Opts) connectDB() (*sql.DB, error) {
@@ -51,7 +53,7 @@ func (c *Opts) initDB(db *sql.DB) error {
 	_, err = db.Exec(`
 CREATE TABLE IF NOT EXISTS board (
 id INTEGER PRIMARY KEY,
-name TEXT UNIQUE ON CONFLICT FAIL,
+name TEXT NOT NULL ON CONFLICT FAIL UNIQUE ON CONFLICT FAIL,
 description TEXT,
 style TEXT,
 max_threads INTEGER NOT NULL DEFAULT 50,
@@ -71,11 +73,12 @@ func (c *Opts) Read() error {
 
 	// We initialize it here because we want to use this function for
 	// refreshing a stale config as well.
-	c.Boards = make(map[string]tchan2.BoardConfig)
+	c.Boards = make([]tchan2.BoardConfig, 0)
 
 	boardRows, err := db.Query(`
 SELECT name, descrition, style, max_threads, max_posts
-FROM board;
+FROM board
+ORDER BY name ASC;
 `)
 	if err != nil {
 		return errors.Wrap(err, "failed to fetch board list from config file")
@@ -83,13 +86,35 @@ FROM board;
 	defer boardRows.Close()
 
 	for boardRows.Next() {
-		var md tchan2.BoardConfig
-		err = boardRows.Scan(&md.Name, &md.Description, &md.HighlightStyle, &md.MaxThreadCount, &md.MaxThreadLength)
+		var bc tchan2.BoardConfig
+		err = boardRows.Scan(&bc.Name, &bc.Description, &bc.HighlightStyle, &bc.MaxThreadCount, &bc.MaxThreadLength)
 		if err != nil {
 			return errors.Wrap(err, "failed to read board definition from config file")
 		}
-		c.Boards[md.Name] = md
+		c.Boards = append(c.Boards, bc)
 	}
 
 	return nil
+}
+
+func (c *Opts) boardIdx(boardName string) int {
+	// Boards are ordered by name, use binary search
+	n := len(c.Boards)
+	return sort.Search(n, func(i int) bool {
+		return c.Boards[i].Name >= boardName
+	})
+}
+
+// BoardExists determines whether a board with the given name exists.
+func (c *Opts) BoardExists(boardName string) bool {
+	return c.boardIdx(boardName) < len(c.Boards)
+}
+
+// BoardConfig returns the configuration for a board.
+func (c *Opts) BoardConfig(boardName string) tchan2.BoardConfig {
+	idx := c.boardIdx(boardName)
+	if idx == len(c.Boards) {
+		log.Fatal("requested board config for non-existant board", boardName)
+	}
+	return c.Boards[idx]
 }

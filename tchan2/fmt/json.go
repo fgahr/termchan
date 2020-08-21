@@ -19,11 +19,16 @@ func (w jsonWriter) write(obj interface{}) error {
 	return w.enc.Encode(obj)
 }
 
-func (w jsonWriter) WriteWelcome(boardData []tchan2.BoardConfig) error {
-	return w.write(boardData)
+func (w jsonWriter) WriteWelcome() error {
+	// TODO
+	return nil
 }
 
-func (w jsonWriter) WriteThread(thread tchan2.ThreadFull) error {
+func (w jsonWriter) WriteOverview(boards []tchan2.BoardConfig) error {
+	return w.write(boards)
+}
+
+func (w jsonWriter) WriteThread(thread tchan2.Thread) error {
 	return w.write(thread)
 }
 
@@ -33,7 +38,7 @@ func (w jsonWriter) WriteBoard(board tchan2.BoardOverview) error {
 
 func (w jsonWriter) WriteError(err error) error {
 	wrapper := struct {
-		err error `json:"error"`
+		Err error `json:"error"`
 	}{err}
 	return w.write(wrapper)
 }
