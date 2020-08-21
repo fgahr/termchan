@@ -66,133 +66,44 @@ func (s *Server) handleListBoards() http.HandlerFunc {
 
 func (s *Server) handleViewBoard() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		f := fmt.GetWriter(r.URL.Query().Get("format"), w)
-		boardName := mux.Vars(r)["board"]
-		if !s.db.BoardExists(boardName) {
-			w.WriteHeader(http.StatusNotFound)
-			return
-		}
+		rw := newRequestWorker(w, r, s.conf)
 
-		board, err := s.db.GetBoard(boardName)
-		if err != nil {
-			log.Println(err)
-			w.WriteHeader(http.StatusInternalServerError)
-		}
+		b := tchan2.BoardOverview{}
+		rw.try(func() error {
+			return s.db.PopulateBoard(rw.board, &b)
+		}, http.StatusInternalServerError, "failed to fetch board")
 
-		err = f.WriteBoard(board)
-		if err != nil {
-			log.Println(err)
-			w.WriteHeader(http.StatusInternalServerError)
-		}
+		rw.respondBoard(b)
 	}
 }
 
 func (s *Server) handleViewThread() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		f := fmt.GetWriter(r.URL.Query().Get("format"), w)
-		boardName := mux.Vars(r)["board"]
-		postID, err := strconv.Atoi(mux.Vars(r)["id"])
-		if err != nil {
-			w.WriteHeader(http.StatusNotFound)
-			f.WriteError(errors.Errorf("invalid thread ID: %s", mux.Vars(r)["id"]))
-			return
-		}
+		rw := newRequestWorker(w, r, s.conf)
 
-		if !s.db.BoardExists(boardName) {
-			w.WriteHeader(http.StatusNotFound)
-			f.WriteError(errors.Errorf("no such board: %s", boardName))
-			return
-		}
+		thr := tchan2.Thread{}
+		rw.try(func() error { return s.db.PopulateThread(rw.board, rw.replyID, &thr) },
+			http.StatusInternalServerError, "failed to fetch thread for viewing")
 
-		if !s.db.ThreadExists(boardName, postID) {
-			w.WriteHeader(http.StatusNotFound)
-			f.WriteError(errors.Errorf("no such post: %s/%d", boardName, postID))
-			return
-		}
-
-		thread, err := s.db.GetThread(boardName, postID)
-		if err != nil {
-			log.Println(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			f.WriteError(errors.Errorf("internal server error"))
-			return
-		}
-
-		err = f.WriteThread(thread)
-		if err != nil {
-			log.Println(err)
-			w.WriteHeader(http.StatusInternalServerError)
-		}
+		rw.respondThread(thr)
 	}
-}
-
-func postParams(r *http.Request) (url.Values, error) {
-	body, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to read request body")
-	}
-	values, err := url.ParseQuery(string(body))
-	return values, errors.Wrap(err, "failed to parse request body")
-}
-
-func (s *Server) assemblePost(values url.Values) (tchan2.Post, error) {
-	content := values.Get("content")
-	// TODO:  Check content length
-
-	author := "Anonymous"
-	if name := values.Get("name"); name != "" {
-		author = name
-	}
-
-	return tchan2.Post{Author: author, ID: -1, Timestamp: time.Now(), Content: content}, nil
 }
 
 func (s *Server) handleCreateThread() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		f := fmt.GetWriter("", w)
-		boardName := mux.Vars(r)["board"]
-		if !s.db.BoardExists(boardName) {
-			w.WriteHeader(http.StatusNotFound)
-			f.WriteError(errors.Errorf("no such board: %s", boardName))
-			return
-		}
+		rw := newRequestWorker(w, r, s.conf)
 
-		params, err := postParams(r)
-		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-		}
-		f = fmt.GetWriter(params.Get("format"), w)
+		rw.extractPost()
+		topic := rw.getTopic()
 
-		post, err := s.assemblePost(params)
-		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			f.WriteError(errors.New("unable to parse post from request data"))
-			return
-		}
+		rw.try(func() error { return s.db.CreateThread(rw.board, topic, &rw.post) },
+			http.StatusInternalServerError, "failed to create thread")
 
-		topic := params.Get("topic")
+		thr := tchan2.Thread{}
+		rw.try(func() error { return s.db.PopulateThread(rw.board, rw.post.ID, &thr) },
+			http.StatusInternalServerError, "failed to fetch thread for viewing")
 
-		id, err := s.db.CreateThread(boardName, topic, post)
-		if err != nil {
-			log.Println(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			f.WriteError(errors.New("failed to create thread"))
-			return
-		}
-
-		thread, err := s.db.GetThread(boardName, id)
-		if err != nil {
-			log.Println(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			f.WriteError(errors.New("failed to fetch thread after creating it"))
-			return
-		}
-
-		err = f.WriteThread(thread)
-		if err != nil {
-			log.Println(err)
-			w.WriteHeader(http.StatusInternalServerError)
-		}
+		rw.respondThread(thr)
 	}
 }
 
@@ -200,33 +111,14 @@ func (s *Server) handleReplyToThread() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		rw := newRequestWorker(w, r, s.conf)
 		rw.extractPost()
-		// TODO
 
-		// postID, err := strconv.Atoi(mux.Vars(r)["id"])
-		// if err != nil {
-		// 	log.Printf("failed to get post ID from mux.Vars: %v", mux.Vars(r))
-		// 	w.WriteHeader(http.StatusBadRequest)
+		rw.try(func() error { return s.db.AddAsReply(rw.board, rw.replyID, &rw.post) },
+			http.StatusInternalServerError, "failed to persist reply")
 
-		// }
+		thr := tchan2.Thread{}
+		rw.try(func() error { return s.db.PopulateThread(rw.board, rw.replyID, &thr) },
+			http.StatusInternalServerError, "failed to fetch thread for viewing")
 
-		// id, err := s.db.AddReply(boardName, postID, post)
-		// if err != nil {
-		// 	log.Println(err)
-		// 	w.WriteHeader(http.StatusInternalServerError)
-		// }
-
-		// thread, err := s.db.GetThread(boardName, id)
-		// if err != nil {
-		// 	log.Println(err)
-		// 	w.WriteHeader(http.StatusInternalServerError)
-		// 	f.WriteError(errors.New("failed to fetch thread after creating it"))
-		// 	return
-		// }
-
-		// err = f.WriteThread(thread)
-		// if err != nil {
-		// 	log.Println(err)
-		// 	w.WriteHeader(http.StatusInternalServerError)
-		// }
+		rw.respondThread(thr)
 	}
 }

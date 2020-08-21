@@ -15,12 +15,16 @@ type DB interface {
 	ThreadExists(boardName string, postID int) bool
 	// GetBoard fetches a board by name.
 	GetBoard(boardName string) (tchan2.BoardOverview, error)
+	// PopulateBoard fetches a board by name.
+	PopulateBoard(boardName string, b *tchan2.BoardOverview) error
 	// GetThread fetches the thread with the specified post in it.
 	GetThread(boardName string, postID int) (tchan2.Thread, error)
-	// CreateThread adds a new thread to a board, returning the OP's post ID.
-	CreateThread(boardName string, topic string, op tchan2.Post) (int, error)
-	// AddPostToThread adds a post to a thread, returning its post ID.
-	AddReply(boardName string, postID int, post tchan2.Post) (int, error)
+	// PopulateThread fetches the thread with the specified post in it.
+	PopulateThread(boardName string, postID int, thr *tchan2.Thread) error
+	// CreateThread adds a new thread to a board, setting the OP's post ID.
+	CreateThread(boardName string, topic string, op *tchan2.Post) error
+	// AddPostToThread adds a post to a thread, setting the post's ID.
+	AddAsReply(boardName string, postID int, post *tchan2.Post) error
 }
 
 // NewDB creates a new backend which has yet to be initialized.
