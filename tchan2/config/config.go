@@ -2,7 +2,6 @@ package config
 
 import (
 	"database/sql"
-	"log"
 	"os"
 	"path/filepath"
 	"sort"
@@ -97,24 +96,16 @@ ORDER BY name ASC;
 	return nil
 }
 
-func (c *Opts) boardIdx(boardName string) int {
-	// Boards are ordered by name, use binary search
+// BoardConfig returns the configuration for a board.
+func (c *Opts) BoardConfig(boardName string) (tchan2.BoardConfig, bool) {
 	n := len(c.Boards)
-	return sort.Search(n, func(i int) bool {
+	idx := sort.Search(n, func(i int) bool {
 		return c.Boards[i].Name >= boardName
 	})
-}
 
-// BoardExists determines whether a board with the given name exists.
-func (c *Opts) BoardExists(boardName string) bool {
-	return c.boardIdx(boardName) < len(c.Boards)
-}
-
-// BoardConfig returns the configuration for a board.
-func (c *Opts) BoardConfig(boardName string) tchan2.BoardConfig {
-	idx := c.boardIdx(boardName)
 	if idx == len(c.Boards) {
-		log.Fatal("requested board config for non-existant board", boardName)
+		return tchan2.BoardConfig{}, false
 	}
-	return c.Boards[idx]
+	b := c.Boards[idx]
+	return c.Boards[idx], b.Name == boardName
 }

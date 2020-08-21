@@ -81,7 +81,7 @@ func (rw *requestWorker) determineBoardAndPost() {
 
 	vars := mux.Vars(rw.r)
 	rw.board = vars["board"]
-	if !rw.conf.BoardExists(rw.board) {
+	if _, ok := rw.conf.BoardConfig(rw.board); !ok {
 		rw.err = errors.Errorf("no such board: %s", rw.board)
 		rw.respondError(http.StatusNotFound)
 		return
@@ -120,7 +120,12 @@ func (rw *requestWorker) try(f func() error, failStatus int, errorText string) {
 func (rw *requestWorker) extractPost() {
 	// Trimming extraneous spaces avoids all kinds of abuse
 	content := strings.TrimSpace(rw.params.Get("content"))
-	bc := rw.conf.BoardConfig(rw.board)
+	bc, ok := rw.conf.BoardConfig(rw.board)
+	if !ok {
+		rw.err = errors.Errorf("no such board: %s", rw.board)
+		rw.respondError(http.StatusNotFound)
+		return
+	}
 	if len(content) > bc.MaxPostBytes {
 		rw.err = errors.Errorf("post too large: %d bytes (max %d bytes)", len(content), bc.MaxPostBytes)
 		rw.respondError(http.StatusBadRequest)
