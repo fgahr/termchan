@@ -18,7 +18,7 @@ type DB interface {
 	// CreateThread adds a new thread to a board, setting the OP's post ID.
 	CreateThread(boardName string, topic string, op *tchan2.Post) error
 	// AddPostToThread adds a reply to a thread, setting the post's ID in the process.
-	AddAsReply(boardName string, postID int, post *tchan2.Post) error
+	AddAsReply(boardName string, postID int, post *tchan2.Post, ok *bool) error
 }
 
 // NewDB creates a new backend which has yet to be initialized.

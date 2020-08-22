@@ -1,13 +1,11 @@
 package server
 
 import (
-	"log"
 	"net/http"
 
 	"github.com/fgahr/termchan/tchan2"
 	"github.com/fgahr/termchan/tchan2/backend"
 	"github.com/fgahr/termchan/tchan2/config"
-	"github.com/fgahr/termchan/tchan2/fmt"
 	"github.com/gorilla/mux"
 )
 
@@ -108,11 +106,14 @@ func (s *Server) handleReplyToThread() http.HandlerFunc {
 		rw := newRequestWorker(w, r, s.conf)
 		rw.extractPost()
 
-		rw.try(func() error { return s.db.AddAsReply(rw.board, rw.replyID, &rw.post) },
+		ok := false
+		rw.try(func() error { return s.db.AddAsReply(rw.board, rw.replyID, &rw.post, &ok) },
 			http.StatusInternalServerError, "failed to persist reply")
+		if !ok {
+			rw.respondNoSuchThread()
+		}
 
 		thr := tchan2.Thread{}
-		ok := false
 		rw.try(func() error { return s.db.PopulateThread(rw.board, rw.replyID, &thr, &ok) },
 			http.StatusInternalServerError, "failed to fetch thread for viewing")
 
