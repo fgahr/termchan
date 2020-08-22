@@ -1,19 +1,14 @@
 package server
 
 import (
-	"io/ioutil"
 	"log"
 	"net/http"
-	"net/url"
-	"strconv"
-	"time"
 
 	"github.com/fgahr/termchan/tchan2"
 	"github.com/fgahr/termchan/tchan2/backend"
 	"github.com/fgahr/termchan/tchan2/config"
 	"github.com/fgahr/termchan/tchan2/fmt"
 	"github.com/gorilla/mux"
-	"github.com/pkg/errors"
 )
 
 // SelectWriter chooses an appropriate writer for the given request.

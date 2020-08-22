@@ -50,10 +50,10 @@ func (rw *requestWorker) readParams() {
 	case "GET":
 		rw.params = rw.r.URL.Query()
 	case "POST":
-		body, rw.err := ioutil.ReadAll(rw.r.Body)
-		if rw.err != nil {
+		body, err := ioutil.ReadAll(rw.r.Body)
+		if err != nil {
+			log.Println(err)
 			rw.err = errors.New("unable to read request body")
-			log.Println(rw.err)
 			// TODO: Check which HTTP status is appropriate
 			rw.respondError(http.StatusPreconditionFailed)
 			return
