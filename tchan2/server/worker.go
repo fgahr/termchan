@@ -2,7 +2,6 @@ package server
 
 import (
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -12,6 +11,7 @@ import (
 	"github.com/fgahr/termchan/tchan2"
 	"github.com/fgahr/termchan/tchan2/config"
 	"github.com/fgahr/termchan/tchan2/fmt"
+	"github.com/fgahr/termchan/tchan2/log"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 )
@@ -52,7 +52,7 @@ func (rw *requestWorker) readParams() {
 	case "POST":
 		body, err := ioutil.ReadAll(rw.r.Body)
 		if err != nil {
-			log.Println(err)
+			log.Error(err)
 			rw.err = errors.New("unable to read request body")
 			// TODO: Check which HTTP status is appropriate
 			rw.respondError(http.StatusPreconditionFailed)
@@ -61,7 +61,7 @@ func (rw *requestWorker) readParams() {
 		rw.params, rw.err = url.ParseQuery(string(body))
 	default:
 		rw.err = errors.Errorf("illegal request method: %s", rw.r.Method)
-		log.Println(rw.err)
+		log.Error(rw.err)
 		rw.respondError(http.StatusBadRequest)
 	}
 }
@@ -101,13 +101,13 @@ func (rw *requestWorker) determineBoardAndPost() {
 	}
 }
 
-func (rw *requestWorker) try(f func() error, failStatus int, errorText string) {
+func (rw *requestWorker) try(f func() error, failStatus int, errorText string, handlers ...func(error)) {
 	if rw.err != nil {
 		return
 	}
 
 	err := f()
-	log.Println(err)
+	log.Error(err)
 	if err != nil {
 		if errorText != "" {
 			err = errors.New(errorText)
@@ -151,32 +151,24 @@ func (rw *requestWorker) getTopic() string {
 	return rw.params.Get("topic")
 }
 
-func (rw *requestWorker) respondThread(thr tchan2.Thread) {
-	if rw.err != nil {
-		return
-	}
+func (rw *requestWorker) respondWelcome() {
+	rw.try(func() error { return rw.f.WriteWelcome() },
+		http.StatusInternalServerError, "", log.Error)
+}
 
-	rw.err = rw.f.WriteThread(thr)
-	if rw.err != nil {
-		// No point in trying to print anything else to the client
-		// just set the status code
-		rw.w.WriteHeader(http.StatusInternalServerError)
-		log.Println(rw.err)
-	}
+func (rw *requestWorker) respondBoardList() {
+	rw.try(func() error { return rw.f.WriteOverview(rw.conf.Boards) },
+		http.StatusInternalServerError, "", log.Error)
+}
+
+func (rw *requestWorker) respondThread(thr tchan2.Thread) {
+	rw.try(func() error { return rw.f.WriteThread(thr) },
+		http.StatusInternalServerError, "", log.Error)
 }
 
 func (rw *requestWorker) respondBoard(b tchan2.BoardOverview) {
-	if rw.err != nil {
-		return
-	}
-
-	rw.err = rw.f.WriteBoard(b)
-	if rw.err != nil {
-		// No point in trying to print anything else to the client
-		// just set the status code
-		rw.w.WriteHeader(http.StatusInternalServerError)
-		log.Println(rw.err)
-	}
+	rw.try(func() error { return rw.f.WriteBoard(b) },
+		http.StatusInternalServerError, "", log.Error)
 }
 
 func (rw *requestWorker) respondError(statusCode int) {

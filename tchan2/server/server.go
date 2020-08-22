@@ -11,12 +11,6 @@ import (
 	"github.com/gorilla/mux"
 )
 
-// SelectWriter chooses an appropriate writer for the given request.
-func SelectWriter(w http.ResponseWriter, r *http.Request) fmt.Writer {
-	format := r.URL.Query().Get("format")
-	return fmt.GetWriter(format, w)
-}
-
 // Server connects all aspects of the termchan application.
 type Server struct {
 	conf   *config.Opts
@@ -39,12 +33,8 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleWelcome() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		f := fmt.GetWriter(r.URL.Query().Get("format"), w)
-		err := f.WriteWelcome()
-		if err != nil {
-			log.Println(err)
-			w.WriteHeader(http.StatusInternalServerError)
-		}
+		rw := newRequestWorker(w, r, s.conf)
+		rw.respondWelcome()
 	}
 }
 
