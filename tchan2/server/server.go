@@ -40,12 +40,8 @@ func (s *Server) handleWelcome() http.HandlerFunc {
 
 func (s *Server) handleListBoards() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		writer := fmt.GetWriter(r.URL.Query().Get("format"), w)
-		err := writer.WriteOverview(s.conf.Boards)
-		if err != nil {
-			log.Println(err)
-			w.WriteHeader(http.StatusInternalServerError)
-		}
+		rw := newRequestWorker(w, r, s.conf)
+		rw.respondBoardList()
 	}
 }
 
