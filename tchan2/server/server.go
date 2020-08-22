@@ -50,11 +50,16 @@ func (s *Server) handleViewBoard() http.HandlerFunc {
 		rw := newRequestWorker(w, r, s.conf)
 
 		b := tchan2.BoardOverview{}
+		ok := false
 		rw.try(func() error {
-			return s.db.PopulateBoard(rw.board, &b)
+			return s.db.PopulateBoard(rw.board, &b, &ok)
 		}, http.StatusInternalServerError, "failed to fetch board")
 
-		rw.respondBoard(b)
+		if ok {
+			rw.respondBoard(b)
+		} else {
+			rw.respondNoSuchBoard()
+		}
 	}
 }
 
@@ -63,10 +68,15 @@ func (s *Server) handleViewThread() http.HandlerFunc {
 		rw := newRequestWorker(w, r, s.conf)
 
 		thr := tchan2.Thread{}
-		rw.try(func() error { return s.db.PopulateThread(rw.board, rw.replyID, &thr) },
+		ok := false
+		rw.try(func() error { return s.db.PopulateThread(rw.board, rw.replyID, &thr, &ok) },
 			http.StatusInternalServerError, "failed to fetch thread for viewing")
 
-		rw.respondThread(thr)
+		if ok {
+			rw.respondThread(thr)
+		} else {
+			rw.respondNoSuchThread()
+		}
 	}
 }
 
@@ -81,10 +91,15 @@ func (s *Server) handleCreateThread() http.HandlerFunc {
 			http.StatusInternalServerError, "failed to create thread")
 
 		thr := tchan2.Thread{}
-		rw.try(func() error { return s.db.PopulateThread(rw.board, rw.post.ID, &thr) },
+		ok := false
+		rw.try(func() error { return s.db.PopulateThread(rw.board, rw.post.ID, &thr, &ok) },
 			http.StatusInternalServerError, "failed to fetch thread for viewing")
 
-		rw.respondThread(thr)
+		if ok {
+			rw.respondThread(thr)
+		} else {
+			rw.respondNoSuchThread()
+		}
 	}
 }
 
@@ -97,9 +112,14 @@ func (s *Server) handleReplyToThread() http.HandlerFunc {
 			http.StatusInternalServerError, "failed to persist reply")
 
 		thr := tchan2.Thread{}
-		rw.try(func() error { return s.db.PopulateThread(rw.board, rw.replyID, &thr) },
+		ok := false
+		rw.try(func() error { return s.db.PopulateThread(rw.board, rw.replyID, &thr, &ok) },
 			http.StatusInternalServerError, "failed to fetch thread for viewing")
 
-		rw.respondThread(thr)
+		if ok {
+			rw.respondThread(thr)
+		} else {
+			rw.respondNoSuchThread()
+		}
 	}
 }

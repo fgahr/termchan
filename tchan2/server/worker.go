@@ -82,7 +82,7 @@ func (rw *requestWorker) determineBoardAndPost() {
 	vars := mux.Vars(rw.r)
 	rw.board = vars["board"]
 	if _, ok := rw.conf.BoardConfig(rw.board); !ok {
-		rw.err = errors.Errorf("no such board: %s", rw.board)
+		rw.err = errors.Errorf("no such board: /%s/", rw.board)
 		rw.respondError(http.StatusNotFound)
 		return
 	}
@@ -118,6 +118,10 @@ func (rw *requestWorker) try(f func() error, failStatus int, errorText string, h
 }
 
 func (rw *requestWorker) extractPost() {
+	if rw.err != nil {
+		return
+	}
+
 	// Trimming extraneous spaces avoids all kinds of abuse
 	content := strings.TrimSpace(rw.params.Get("content"))
 	bc, ok := rw.conf.BoardConfig(rw.board)
@@ -166,12 +170,30 @@ func (rw *requestWorker) respondThread(thr tchan2.Thread) {
 		http.StatusInternalServerError, "", log.Error)
 }
 
+func (rw *requestWorker) respondNoSuchThread() {
+	if rw.err != nil {
+		return
+	}
+
+	rw.err = errors.Errorf("no such thread: /%s/%d", rw.board, rw.replyID)
+	rw.respondError(http.StatusNotFound)
+}
+
 func (rw *requestWorker) respondBoard(b tchan2.BoardOverview) {
 	rw.try(func() error { return rw.f.WriteBoard(b) },
 		http.StatusInternalServerError, "", log.Error)
 }
 
+func (rw *requestWorker) respondNoSuchBoard() {
+	if rw.err != nil {
+		return
+	}
+
+	rw.err = errors.Errorf("no such board: /%s/", rw.board)
+	rw.respondError(http.StatusNotFound)
+}
+
 func (rw *requestWorker) respondError(statusCode int) {
-	rw.w.WriteHeader(statusCode)
 	rw.f.WriteError(rw.err)
+	rw.w.WriteHeader(statusCode)
 }
