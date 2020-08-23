@@ -7,7 +7,6 @@ import (
 	"github.com/fgahr/termchan/tchan"
 	"github.com/fgahr/termchan/tchan/config"
 	"github.com/gorilla/mux"
-	_ "github.com/mattn/go-sqlite3"
 	"github.com/pkg/errors"
 )
 

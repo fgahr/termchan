@@ -31,9 +31,10 @@ type Thread struct {
 
 // ThreadOverview contains superficial thread data.
 type ThreadOverview struct {
-	Topic  string    `json:"topic"`
-	OP     Post      `json:"op"`
-	Active time.Time `json:"active"`
+	Topic      string    `json:"topic"`
+	OP         Post      `json:"op"`
+	NumReplies int       `json:"numReplies"`
+	Active     time.Time `json:"active"`
 }
 
 // BoardOverview contains superficial board data.
