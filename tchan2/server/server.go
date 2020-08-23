@@ -104,8 +104,8 @@ func (s *Server) handleCreateThread() http.HandlerFunc {
 func (s *Server) handleReplyToThread() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		rw := newRequestWorker(w, r, s.conf)
-		rw.extractPost()
 
+		rw.extractPost()
 		ok := false
 		rw.try(func() error { return s.db.AddAsReply(rw.board, rw.replyID, &rw.post, &ok) },
 			http.StatusInternalServerError, "failed to persist reply")
