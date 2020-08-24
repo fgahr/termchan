@@ -16,8 +16,8 @@ type BoardConfig struct {
 
 // Post contains all data of a single post.
 type Post struct {
-	Author    string    `json:"author"`
 	ID        int       `json:"id"`
+	Author    string    `json:"author"`
 	Timestamp time.Time `json:"timestamp"`
 	Content   string    `json:"content"`
 }

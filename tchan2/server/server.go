@@ -107,7 +107,7 @@ func (s *Server) handleReplyToThread() http.HandlerFunc {
 
 		rw.extractPost()
 		ok := false
-		rw.try(func() error { return s.db.AddAsReply(rw.board, rw.replyID, &rw.post, &ok) },
+		rw.try(func() error { return s.db.AddReply(rw.board, rw.replyID, &rw.post, &ok) },
 			http.StatusInternalServerError, "failed to persist reply")
 		if !ok {
 			rw.respondNoSuchThread()

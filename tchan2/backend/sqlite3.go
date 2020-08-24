@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/fgahr/termchan/tchan2"
+	"github.com/fgahr/termchan/tchan2/config"
 	"github.com/fgahr/termchan/tchan2/util"
 	"github.com/pkg/errors"
 
@@ -21,6 +22,7 @@ type sqlite struct {
 }
 
 func (s *sqlite) Init() error {
+	s.boardsDirectory = filepath.Join(s.conf.WorkingDirectory, "boards")
 	if ok, err := util.DirExists(s.boardsDirectory); err != nil {
 		return err
 	} else if !ok {
@@ -30,6 +32,7 @@ func (s *sqlite) Init() error {
 		}
 	}
 
+	s.boardDBs = make(map[string]*sql.DB)
 	for _, board := range s.conf.Boards {
 		if err := s.initBoardDB(board.Name); err != nil {
 			return err
@@ -56,13 +59,18 @@ func (s *sqlite) PopulateBoard(boardName string, b *tchan2.BoardOverview, ok *bo
 		return nil
 	}
 
+	bconf, confOK := s.conf.BoardConfig(boardName)
+	if !confOK {
+		return errors.Errorf("found DB but no config for /%s/", boardName)
+	}
+
 	threadRows, err := boardDB.Query(`
 SELECT t.topic, t.num_replies, t.created_at, t.active_at, op.author, op.content
 FROM thread t INNER JOIN post op ON t.op_id = op.id
 AND t.num_replies > -1 AND t.num_replies <= ?
 ORDER BY t.last_reply DESC
 LIMIT ?;
-`)
+`, bconf.MaxThreadLength, bconf.MaxThreadCount)
 	if err != nil {
 		return errors.Wrap(err, "failed to gather thread summaries")
 	}
@@ -77,17 +85,17 @@ LIMIT ?;
 			errors.Wrap(err, "failed to extract thread summary")
 		}
 
-		if created, err := time.Parse(time.RFC3339, createdTS); err != nil {
-			return errors.Wrap(err, "malformed date string in thread table (created_at)")
-		} else {
-			t.OP.Timestamp = created
+		var created time.Time
+		if created, err = time.Parse(time.RFC3339, createdTS); err != nil {
+			return errors.Wrap(err, "malformed date string in post table (created_at)")
 		}
+		t.OP.Timestamp = created
 
-		if active, err := time.Parse(time.RFC3339, activeTS); err != nil {
+		var active time.Time
+		if active, err = time.Parse(time.RFC3339, activeTS); err != nil {
 			return errors.Wrap(err, "malformed date string in thread table (active_at)")
-		} else {
-			t.Active = active
 		}
+		t.Active = active
 
 		b.Threads = append(b.Threads, t)
 	}
@@ -95,74 +103,151 @@ LIMIT ?;
 	return nil
 }
 
-func (s *sqlite) initBoardDB(boardName string) error {
-	path := filepath.Join(s.boardsDirectory, boardName+".db")
-	var boardDB *sql.DB
-	var err error
-
-	if boardDB, err = sql.Open("sqlite3", path); err != nil {
-		return errors.Wrapf(err, "failed to connect to %s", path)
-	}
-
-	_, err = boardDB.Exec(`
-CREATE TABLE IF NOT EXISTS thread (
-    id INTEGER PRIMARY KEY,
-    op_id INTEGER,
-    num_replies INTEGER DEFAULT -1,
-    topic TEXT,
-    created_at TEXT,
-    active_at TEXT,
-    FOREIGN KEY(board_id) REFERENCES board(id)
-);
-`)
+func getThreadID(db *sql.DB, postID int) (int, bool, error) {
+	threadID := -1
+	result, err := db.Query(`
+SELECT thread_id FROM post WHERE id = ?;
+`, postID)
 	if err != nil {
-		return errors.Wrapf(err, "failed to create /%s/ thread table", boardName)
+		return 0, false, err
 	}
-
-	_, err = boardDB.Exec(`
-CREATE TABLE IF NOT EXISTS post (
-    id INTEGER PRIMARY KEY,
-    thread_id INTEGER NOT NULL,
-    author TEXT,
-    author_ip TEXT,
-    content TEXT NOT NULL,
-    created_at TEXT,
-    FOREIGN KEY(thread_id) REFERENCES thread(id) NOT DEFERRABLE
-);
-`)
+	defer result.Close()
+	if !result.Next() {
+		return threadID, false, nil
+	}
+	err = result.Scan(&threadID)
 	if err != nil {
-		return errors.Wrapf(err, "failed to create /%s/ post table", boardName)
+		return threadID, false, err
 	}
 
-	_, err = boardDB.Exec(`
-CREATE INDEX IF NOT EXISTS post_by_thread_id ON post(thread_id);
-`)
+	return threadID, true, nil
+}
+
+func getTopic(db *sql.DB, threadID int) (string, error) {
+	topic := ""
+	result, err := db.Query(`
+SELECT topic FROM thread WHERE id = ?;
+`, threadID)
 	if err != nil {
-
+		return topic, err
+	}
+	defer result.Close()
+	if !result.Next() {
+		return topic, errors.Errorf("no thread table entry for thread %s", threadID)
 	}
 
-	_, err = boardDB.Exec(`
-CREATE TRIGGER IF NOT EXISTS update_thread_timestamp
-AFTER INSERT ON post
-FOR EACH ROW
-BEGIN
--- SQLite3 uses UTC internally so we can add the static 'Z' time zone suffix
-created_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now')
-    WHERE post.id = NEW.id;
-
-UPDATE thread
-SET num_replies = num_replies + 1,
-    op_id = coalesce(op_id, NEW.id),
-    created_at = coalesce(created_at, (SELECT created_at FROM post WHERE id = NEW.id)),
-    active_at = max(coalesce(last_reply, '1970-01-01T00:00:00'),
-                     (SELECT created_at FROM post WHERE id = NEW.id))
-WHERE id = NEW.thread_id;
-END;
-`)
+	err = result.Scan(&topic)
 	if err != nil {
-		return errors.Wrapf(err, "failed to create thread update trigger on /%s/", boardName)
+		return topic, errors.Errorf("invalid topic for thread %s", threadID)
 	}
 
-	s.boardDBs[boardName] = boardDB
+	return topic, nil
+}
+
+func (s *sqlite) PopulateThread(boardName string, postID int, thr *tchan2.Thread, ok *bool) error {
+	boardDB, boardOK := s.boardDBs[boardName]
+	if !boardOK {
+		*ok = false
+		return nil
+	}
+
+	threadID, idOK, err := getThreadID(boardDB, postID)
+	if err != nil {
+		return err
+	}
+	if !idOK {
+		*ok = false
+		return nil
+	}
+	thr.Topic, err = getTopic(boardDB, threadID)
+	if err != nil {
+		*ok = false
+		return err
+	}
+
+	result, err := boardDB.Query(`
+SELECT id, author, timestamp, content FROM post
+WHERE thread_id = ?
+ORDER BY timestamp ASC;
+`, threadID)
+	if err != nil {
+		return err
+	}
+	defer result.Close()
+
+	for result.Next() {
+		post := tchan2.Post{}
+		var ts string
+		err = result.Scan(&post.ID, &post.Author, &ts, &post.Content)
+		if err != nil {
+			return err
+		}
+
+		post.Timestamp, err = time.Parse(time.RFC3339, ts)
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
+}
+
+func (s *sqlite) CreateThread(boardName string, topic string, op *tchan2.Post) error {
+	boardDB, boardOK := s.boardDBs[boardName]
+	if !boardOK {
+		return errors.Errorf("attempting to create thread on non-existing board /%s/", boardName)
+	}
+
+	result, err := boardDB.Exec(`
+INSERT INTO thread (topic) VALUES (?);
+`, topic)
+	if err != nil {
+		return err
+	}
+
+	threadID, err := result.LastInsertId()
+	if err != nil {
+		return err
+	}
+
+	_, err = boardDB.Exec(`
+INSERT INTO post (thread_id, author, content) VALUES (?, ?, ?);
+`, threadID, op.Author, op.Content)
+
+	return err
+}
+
+func (s *sqlite) AddReply(boardName string, postID int, post *tchan2.Post, ok *bool) error {
+	boardDB, boardOK := s.boardDBs[boardName]
+	if !boardOK {
+		return errors.Errorf("attempting to add post on non-existing board /%s/", boardName)
+	}
+
+	postRow, err := boardDB.Query(`
+SELECT thread_id FROM post WHERE thread_id = ?;
+`, postID)
+	if err != nil {
+		return err
+	}
+
+	if postRow.Next() {
+		*ok = false
+		return nil
+	}
+	*ok = true
+
+	var threadID int
+	if err = postRow.Scan(&threadID); err != nil {
+		return err
+	}
+
+	if err = postRow.Close(); err != nil {
+		return err
+	}
+
+	_, err = boardDB.Exec(`
+INSERT INTO post (thread_id, author, content) VALUES (?, ?, ?);
+`, threadID, post.Author, post.Content)
+
+	return err
 }
