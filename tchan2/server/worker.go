@@ -107,8 +107,8 @@ func (rw *requestWorker) try(f func() error, failStatus int, errorText string, h
 	}
 
 	err := f()
-	log.Error(err)
 	if err != nil {
+		log.Error(err)
 		if errorText != "" {
 			err = errors.New(errorText)
 		}
@@ -194,6 +194,6 @@ func (rw *requestWorker) respondNoSuchBoard() {
 }
 
 func (rw *requestWorker) respondError(statusCode int) {
-	rw.f.WriteError(rw.err)
 	rw.w.WriteHeader(statusCode)
+	rw.f.WriteError(rw.err)
 }

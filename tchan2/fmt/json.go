@@ -38,7 +38,7 @@ func (w jsonWriter) WriteBoard(board tchan2.BoardOverview) error {
 
 func (w jsonWriter) WriteError(err error) error {
 	wrapper := struct {
-		Err error `json:"error"`
-	}{err}
+		Err string `json:"error"`
+	}{err.Error()}
 	return w.write(wrapper)
 }

@@ -16,9 +16,9 @@ type Server struct {
 	router *mux.Router
 }
 
-// NewServer creates a new server without configuration or backend.
+// New creates a new server without configuration or backend.
 // In order to be usable these still need to be set up.
-func NewServer(opts *config.Opts, db backend.DB) *Server {
+func New(opts *config.Opts, db backend.DB) *Server {
 	s := &Server{conf: opts, db: db, router: mux.NewRouter()}
 	s.routes()
 	return s

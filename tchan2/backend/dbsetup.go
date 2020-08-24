@@ -23,8 +23,7 @@ CREATE TABLE IF NOT EXISTS thread (
     num_replies INTEGER DEFAULT -1,
     topic TEXT,
     created_at TEXT,
-    active_at TEXT,
-    FOREIGN KEY(board_id) REFERENCES board(id)
+    active_at TEXT
 );
 `)
 	if err != nil {
@@ -58,13 +57,14 @@ CREATE TRIGGER IF NOT EXISTS update_thread_timestamp
 AFTER INSERT ON post
 FOR EACH ROW
 BEGIN
+UPDATE post SET
 -- SQLite3 uses UTC internally so we can add the static 'Z' time zone suffix
 created_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now')
     WHERE post.id = NEW.id;
 
 UPDATE thread
 SET num_replies = num_replies + 1,
-    op_id =_ coalesce(op_id, NEW.id),
+    op_id = coalesce(op_id, NEW.id),
     created_at = coalesce(created_at, (SELECT created_at FROM post WHERE id = NEW.id)),
     -- max() doesn't work with NULL so we make sure to indeed have a value
     active_at = max(coalesce(last_reply, '1970-01-01T00:00:00'),

@@ -63,12 +63,13 @@ func (s *sqlite) PopulateBoard(boardName string, b *tchan2.BoardOverview, ok *bo
 	if !confOK {
 		return errors.Errorf("found DB but no config for /%s/", boardName)
 	}
+	*ok = true
 
 	threadRows, err := boardDB.Query(`
 SELECT t.topic, t.num_replies, t.created_at, t.active_at, op.author, op.content
 FROM thread t INNER JOIN post op ON t.op_id = op.id
 AND t.num_replies > -1 AND t.num_replies <= ?
-ORDER BY t.last_reply DESC
+ORDER BY t.active_at DESC
 LIMIT ?;
 `, bconf.MaxThreadLength, bconf.MaxThreadCount)
 	if err != nil {

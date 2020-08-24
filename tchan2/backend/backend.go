@@ -21,7 +21,7 @@ type DB interface {
 	AddReply(boardName string, postID int, post *tchan2.Post, ok *bool) error
 }
 
-// NewDB creates a new backend which has yet to be initialized.
-func NewDB(opts *config.Opts) DB {
+// New creates a new backend which has yet to be initialized.
+func New(opts *config.Opts) DB {
 	return &sqlite{conf: opts}
 }

@@ -16,6 +16,14 @@ type Opts struct {
 	Boards           []tchan2.BoardConfig
 }
 
+// New creates a new configuration object.
+func New(workingDirectory string) *Opts {
+	return &Opts{
+		WorkingDirectory: workingDirectory,
+		Boards:           nil,
+	}
+}
+
 func (c *Opts) connectDB() (*sql.DB, error) {
 	var err error
 
@@ -38,14 +46,6 @@ func (c *Opts) connectDB() (*sql.DB, error) {
 	return db, nil
 }
 
-// New creates a new configuration object.
-func New(workingDirectory string) *Opts {
-	return &Opts{
-		WorkingDirectory: workingDirectory,
-		Boards:           nil,
-	}
-}
-
 func (c *Opts) initDB(db *sql.DB) error {
 	var err error
 
@@ -53,8 +53,8 @@ func (c *Opts) initDB(db *sql.DB) error {
 CREATE TABLE IF NOT EXISTS board (
 id INTEGER PRIMARY KEY,
 name TEXT NOT NULL ON CONFLICT FAIL UNIQUE ON CONFLICT FAIL,
-description TEXT,
-style TEXT,
+description TEXT NOT NULL,
+style TEXT NOT NULL DEFAULT 'plain',
 max_threads INTEGER NOT NULL DEFAULT 50,
 max_posts INTEGER NOT NULL DEFAULT 100
 );
@@ -70,12 +70,16 @@ func (c *Opts) Read() error {
 	}
 	defer db.Close()
 
+	if err = c.initDB(db); err != nil {
+		return err
+	}
+
 	// We initialize it here because we want to use this function for
 	// refreshing a stale config as well.
 	c.Boards = make([]tchan2.BoardConfig, 0)
 
 	boardRows, err := db.Query(`
-SELECT name, descrition, style, max_threads, max_posts
+SELECT name, description, style, max_threads, max_posts
 FROM board
 ORDER BY name ASC;
 `)
@@ -104,7 +108,7 @@ func (c *Opts) BoardConfig(boardName string) (tchan2.BoardConfig, bool) {
 	})
 
 	if idx == len(c.Boards) {
-		return tchan2.BoardConfig{}, false
+
 	}
 	b := c.Boards[idx]
 	return c.Boards[idx], b.Name == boardName
