@@ -47,14 +47,18 @@ func (s *Server) handleViewBoard() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		rw := newRequestWorker(w, r, s.conf)
 
-		b := tchan2.BoardOverview{}
-		ok := false
+		boardConf, ok := s.conf.BoardConfig(rw.board)
+		if !ok {
+			rw.respondNoSuchBoard()
+		}
+
+		board := tchan2.BoardOverview{MetaData: boardConf}
 		rw.try(func() error {
-			return s.db.PopulateBoard(rw.board, &b, &ok)
+			return s.db.PopulateBoard(rw.board, &board, &ok)
 		}, http.StatusInternalServerError, "failed to fetch board")
 
 		if ok {
-			rw.respondBoard(b)
+			rw.respondBoard(board)
 		} else {
 			rw.respondNoSuchBoard()
 		}
