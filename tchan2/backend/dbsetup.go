@@ -67,7 +67,7 @@ SET num_replies = num_replies + 1,
     op_id = coalesce(op_id, NEW.id),
     created_at = coalesce(created_at, (SELECT created_at FROM post WHERE id = NEW.id)),
     -- max() doesn't work with NULL so we make sure to indeed have a value
-    active_at = max(coalesce(last_reply, '1970-01-01T00:00:00'),
+    active_at = max(coalesce(active_at, '1970-01-01T00:00:00'),
                      (SELECT created_at FROM post WHERE id = NEW.id))
 WHERE id = NEW.thread_id;
 END;

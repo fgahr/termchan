@@ -56,7 +56,8 @@ name TEXT NOT NULL ON CONFLICT FAIL UNIQUE ON CONFLICT FAIL,
 description TEXT NOT NULL,
 style TEXT NOT NULL DEFAULT 'plain',
 max_threads INTEGER NOT NULL DEFAULT 50,
-max_posts INTEGER NOT NULL DEFAULT 100
+max_posts INTEGER NOT NULL DEFAULT 100,
+max_post_bytes INTEGER NOT NULL DEFAULT 4096
 );
 `)
 
@@ -79,7 +80,7 @@ func (c *Opts) Read() error {
 	c.Boards = make([]tchan2.BoardConfig, 0)
 
 	boardRows, err := db.Query(`
-SELECT name, description, style, max_threads, max_posts
+SELECT name, description, style, max_threads, max_posts, max_post_bytes
 FROM board
 ORDER BY name ASC;
 `)
@@ -90,7 +91,8 @@ ORDER BY name ASC;
 
 	for boardRows.Next() {
 		var bc tchan2.BoardConfig
-		err = boardRows.Scan(&bc.Name, &bc.Description, &bc.HighlightStyle, &bc.MaxThreadCount, &bc.MaxThreadLength)
+		err = boardRows.Scan(&bc.Name, &bc.Description, &bc.HighlightStyle,
+			&bc.MaxThreadCount, &bc.MaxThreadLength, &bc.MaxPostBytes)
 		if err != nil {
 			return errors.Wrap(err, "failed to read board definition from config file")
 		}
@@ -108,7 +110,7 @@ func (c *Opts) BoardConfig(boardName string) (tchan2.BoardConfig, bool) {
 	})
 
 	if idx == len(c.Boards) {
-
+		return tchan2.BoardConfig{}, false
 	}
 	b := c.Boards[idx]
 	return c.Boards[idx], b.Name == boardName

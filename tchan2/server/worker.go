@@ -17,14 +17,13 @@ import (
 )
 
 type requestWorker struct {
-	w http.ResponseWriter
-	r *http.Request
-	// db      backend.DB
+	w       http.ResponseWriter
+	r       *http.Request
 	conf    *config.Opts
 	f       fmt.Writer
 	params  url.Values
 	board   string
-	replyID int
+	replyID int64
 	post    tchan2.Post
 	err     error
 }
@@ -91,7 +90,7 @@ func (rw *requestWorker) determineBoardAndPost() {
 	if id == "" {
 		rw.replyID = 0
 	} else {
-		rw.replyID, rw.err = strconv.Atoi(id)
+		rw.replyID, rw.err = strconv.ParseInt(id, 10, 64)
 	}
 
 	if rw.err != nil {

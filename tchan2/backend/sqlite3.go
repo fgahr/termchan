@@ -77,6 +77,7 @@ LIMIT ?;
 	}
 	defer threadRows.Close()
 
+	b.Threads = make([]tchan2.ThreadOverview, 0)
 	for threadRows.Next() {
 		t := tchan2.ThreadOverview{}
 		var createdTS, activeTS string
@@ -104,7 +105,7 @@ LIMIT ?;
 	return nil
 }
 
-func getThreadID(db *sql.DB, postID int) (int, bool, error) {
+func getThreadID(db *sql.DB, postID int64) (int, bool, error) {
 	threadID := -1
 	result, err := db.Query(`
 SELECT thread_id FROM post WHERE id = ?;
@@ -145,7 +146,7 @@ SELECT topic FROM thread WHERE id = ?;
 	return topic, nil
 }
 
-func (s *sqlite) PopulateThread(boardName string, postID int, thr *tchan2.Thread, ok *bool) error {
+func (s *sqlite) PopulateThread(boardName string, postID int64, thr *tchan2.Thread, ok *bool) error {
 	boardDB, boardOK := s.boardDBs[boardName]
 	if !boardOK {
 		*ok = false
@@ -218,7 +219,7 @@ INSERT INTO post (thread_id, author, content) VALUES (?, ?, ?);
 	return err
 }
 
-func (s *sqlite) AddReply(boardName string, postID int, post *tchan2.Post, ok *bool) error {
+func (s *sqlite) AddReply(boardName string, postID int64, post *tchan2.Post, ok *bool) error {
 	boardDB, boardOK := s.boardDBs[boardName]
 	if !boardOK {
 		return errors.Errorf("attempting to add post on non-existing board /%s/", boardName)
@@ -246,9 +247,14 @@ SELECT thread_id FROM post WHERE thread_id = ?;
 		return err
 	}
 
-	_, err = boardDB.Exec(`
+	result, err := boardDB.Exec(`
 INSERT INTO post (thread_id, author, content) VALUES (?, ?, ?);
 `, threadID, post.Author, post.Content)
+	if err != nil {
+		return err
+	}
+
+	post.ID, err = result.LastInsertId()
 
 	return err
 }
