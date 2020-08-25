@@ -3,21 +3,23 @@ package fmt
 import (
 	"fmt"
 	"io"
+	"net/http"
+	"net/url"
 
 	"github.com/fgahr/termchan/tchan2"
 )
 
 // Available ANSI styles
 const (
-	fgBlack   = "\u001b[30m"
-	fgRed     = "\u001b[31m"
-	fgGreen   = "\u001b[32m"
-	fgYellow  = "\u001b[33m"
-	fgBlue    = "\u001b[34m"
-	fgMagenta = "\u001b[35m"
-	fgCyan    = "\u001b[36m"
-	fgWhite   = "\u001b[37m"
-	ansiReset = "\u001b[0m"
+	fgBlack   simpleStyle = "\u001b[30m"
+	fgRed     simpleStyle = "\u001b[31m"
+	fgGreen   simpleStyle = "\u001b[32m"
+	fgYellow  simpleStyle = "\u001b[33m"
+	fgBlue    simpleStyle = "\u001b[34m"
+	fgMagenta simpleStyle = "\u001b[35m"
+	fgCyan    simpleStyle = "\u001b[36m"
+	fgWhite   simpleStyle = "\u001b[37m"
+	ansiReset             = "\u001b[0m"
 )
 
 // Writer describes an entity in charge of writing a server response.
@@ -29,8 +31,8 @@ type Writer interface {
 	WriteError(err error) error
 }
 
-// GetWriter finds a named writer as expected for format specifications.
-func GetWriter(name string, w io.Writer) Writer {
+// GetWriter finds a suitable writer for the request.
+func GetWriter(params url.Values, r *http.Request, w io.Writer) Writer {
 	return newJSONWriter(w)
 }
 
@@ -39,9 +41,15 @@ type Style interface {
 	FormatANSI(s string) string
 }
 
-type style string
+type noStyle struct{}
 
-func (sty style) FormatANSI(s string) string {
+func (noStyle) FormatANSI(s string) string {
+	return s
+}
+
+type simpleStyle string
+
+func (sty simpleStyle) FormatANSI(s string) string {
 	return fmt.Sprintf("%s%s%s", sty, s, ansiReset)
 }
 
@@ -50,13 +58,14 @@ func GetStyle(name string) Style {
 	if s, ok := styleNames[name]; ok {
 		return s
 	}
-	return style(fgWhite)
+	return simpleStyle(fgWhite)
 }
 
-var styleNames map[string]style
+var styleNames map[string]Style
 
 func init() {
-	styleNames = make(map[string]style)
+	styleNames = make(map[string]Style)
+	styleNames["none"] = noStyle{}
 	styleNames["black"] = fgBlack
 	styleNames["red"] = fgRed
 	styleNames["green"] = fgGreen

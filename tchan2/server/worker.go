@@ -70,7 +70,7 @@ func (rw *requestWorker) setUpWriter() {
 		return
 	}
 
-	rw.f = fmt.GetWriter(rw.params.Get("format"), rw.w)
+	rw.f = fmt.GetWriter(rw.params, rw.r, rw.w)
 }
 
 func (rw *requestWorker) determineBoardAndPost() {
