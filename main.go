@@ -1,9 +1,9 @@
 package main
 
 import (
+	"flag"
 	"log"
 	"net/http"
-	"os"
 
 	"github.com/fgahr/termchan/tchan2/backend"
 	"github.com/fgahr/termchan/tchan2/config"
@@ -11,10 +11,10 @@ import (
 )
 
 func run() error {
-	wd, err := os.Getwd()
-	if err != nil {
-		return err
-	}
+	var err error
+	var wd string
+	flag.StringVar(&wd, "dir", "./", "the base (configuration) directory for the service")
+	flag.Parse()
 
 	conf := config.New(wd)
 	if err = conf.Read(); err != nil {
