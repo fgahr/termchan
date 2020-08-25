@@ -20,8 +20,10 @@ func (w jsonWriter) write(obj interface{}) error {
 }
 
 func (w jsonWriter) WriteWelcome() error {
-	// TODO
-	return nil
+	msg := struct {
+		Msg string `json:"msg"`
+	}{"Welcome to TermChan"}
+	return w.enc.Encode(msg)
 }
 
 func (w jsonWriter) WriteOverview(boards []tchan2.BoardConfig) error {

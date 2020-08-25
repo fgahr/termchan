@@ -28,6 +28,7 @@ func run() error {
 
 	srv := server.New(conf, db)
 
+	log.Println("serving HTTP on port 8088")
 	return http.ListenAndServe(":8088", srv)
 }
 
