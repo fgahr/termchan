@@ -80,11 +80,6 @@ func (rw *requestWorker) determineBoardAndPost() {
 
 	vars := mux.Vars(rw.r)
 	rw.board = vars["board"]
-	if _, ok := rw.conf.BoardConfig(rw.board); !ok {
-		rw.err = errors.Errorf("no such board: /%s/", rw.board)
-		rw.respondError(http.StatusNotFound)
-		return
-	}
 
 	id := vars["id"]
 	if id == "" {
