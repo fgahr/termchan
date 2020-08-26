@@ -90,13 +90,16 @@ func (w *ansiWriter) WriteWelcome() error {
 	w.hlStyle = fgGreen
 	w.writeln(w.hl("Viewing"))
 	w.singleDivider()
+	w.write("%s the board list\n", w.hl("View"))
+	w.write("  curl -s '%s/boards'\n", w.hostname)
+	w.singleDivider()
 	w.write("%s a board (e.g. /g/)\n", w.hl("View"))
 	w.write("  curl -s '%s/g'\n", w.hostname)
 	w.singleDivider()
 	w.write("%s a thread (e.g. thread #23 on /v/)\n", w.hl("View"))
 	w.write("  curl -s '%s/v/23'\n", w.hostname)
 	w.singleDivider()
-	w.write("%s a thread as JSON\n", w.hl("View"))
+	w.write("%s as JSON\n", w.hl("View"))
 	w.write("  curl -s '%s/d/69?format=json'\n", w.hostname)
 	w.doubleDivider()
 
@@ -117,6 +120,7 @@ func (w *ansiWriter) WriteWelcome() error {
 	w.singleDivider()
 	w.write("(%s) fields other than content are optional\n", w.hl("*"))
 	w.doubleDivider()
+	w.write("%s %s!\n", fgGreen.FormatANSI("HAVE"), fgBlue.FormatANSI("FUN"))
 
 	return w.err
 }
