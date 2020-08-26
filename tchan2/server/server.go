@@ -36,13 +36,6 @@ func (s *Server) handleWelcome() http.HandlerFunc {
 	}
 }
 
-func (s *Server) handleListBoards() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		rw := newRequestWorker(w, r, s.conf)
-		rw.respondBoardList()
-	}
-}
-
 func (s *Server) handleViewBoard() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		rw := newRequestWorker(w, r, s.conf)

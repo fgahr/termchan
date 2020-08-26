@@ -150,12 +150,7 @@ func (rw *requestWorker) getTopic() string {
 }
 
 func (rw *requestWorker) respondWelcome() {
-	rw.try(func() error { return rw.f.WriteWelcome() },
-		http.StatusInternalServerError, "", log.Error)
-}
-
-func (rw *requestWorker) respondBoardList() {
-	rw.try(func() error { return rw.f.WriteOverview(rw.conf.Boards) },
+	rw.try(func() error { return rw.f.WriteWelcome(rw.conf.Boards) },
 		http.StatusInternalServerError, "", log.Error)
 }
 

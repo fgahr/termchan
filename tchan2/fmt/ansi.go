@@ -77,21 +77,23 @@ var bannerChan = []string{
 	"                                      \"YUMMMMMP\"MMM    YMMYMM   \"\"` MMM     YM",
 }
 
-func (w *ansiWriter) WriteWelcome() error {
+func (w *ansiWriter) WriteWelcome(boards []tchan2.BoardConfig) error {
 	for _, line := range bannerTerm {
 		w.writeln(fgGreen.FormatANSI(line))
 	}
 	for _, line := range bannerChan {
 		w.writeln(fgBlue.FormatANSI(line))
 	}
-	w.writeln("Welcome!")
+	w.writeln("Welcome! Available boards:")
+	w.doubleDivider()
+	for _, b := range boards {
+		style := GetStyle(b.HighlightStyle)
+		w.write("  /%s/ - %s\n", style.FormatANSI(b.Name), style.FormatANSI(b.Description))
+	}
 	w.doubleDivider()
 
 	w.hlStyle = fgGreen
 	w.writeln(w.hl("Viewing"))
-	w.singleDivider()
-	w.write("%s the board list\n", w.hl("View"))
-	w.write("  curl -s '%s/boards'\n", w.hostname)
 	w.singleDivider()
 	w.write("%s a board (e.g. /g/)\n", w.hl("View"))
 	w.write("  curl -s '%s/g'\n", w.hostname)
@@ -118,15 +120,12 @@ func (w *ansiWriter) WriteWelcome() error {
 	w.write("      --data-urlencode \"topic=Candlejack\" \\\n")
 	w.write("      --data-urlencode \"content=I'm not afraid of him, what's he gon-\"\n")
 	w.singleDivider()
-	w.write("(%s) fields other than content are optional\n", w.hl("*"))
+	w.write("(%s) fields other than content are optional, board/thread has to exist\n", w.hl("*"))
 	w.doubleDivider()
+
 	w.write("%s %s!\n", fgGreen.FormatANSI("HAVE"), fgBlue.FormatANSI("FUN"))
 
 	return w.err
-}
-
-func (w *ansiWriter) WriteOverview(boards []tchan2.BoardConfig) error {
-	return nil
 }
 
 func (w *ansiWriter) WriteThread(thread tchan2.Thread) error {

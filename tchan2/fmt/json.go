@@ -19,14 +19,7 @@ func (w jsonWriter) write(obj interface{}) error {
 	return w.enc.Encode(obj)
 }
 
-func (w jsonWriter) WriteWelcome() error {
-	msg := struct {
-		Msg string `json:"msg"`
-	}{"Welcome to TermChan"}
-	return w.enc.Encode(msg)
-}
-
-func (w jsonWriter) WriteOverview(boards []tchan2.BoardConfig) error {
+func (w jsonWriter) WriteWelcome(boards []tchan2.BoardConfig) error {
 	return w.write(boards)
 }
 
