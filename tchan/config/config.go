@@ -6,14 +6,14 @@ import (
 	"path/filepath"
 	"sort"
 
-	"github.com/fgahr/termchan/tchan2"
+	"github.com/fgahr/termchan/tchan"
 	"github.com/pkg/errors"
 )
 
 // Opts deals with all variable and optional aspects of termchan.
 type Opts struct {
 	WorkingDirectory string
-	Boards           []tchan2.BoardConfig
+	Boards           []tchan.BoardConfig
 }
 
 // New creates a new configuration object.
@@ -77,7 +77,7 @@ func (c *Opts) Read() error {
 
 	// We initialize it here because we want to use this function for
 	// refreshing a stale config as well.
-	c.Boards = make([]tchan2.BoardConfig, 0)
+	c.Boards = make([]tchan.BoardConfig, 0)
 
 	boardRows, err := db.Query(`
 SELECT name, description, style, max_threads, max_posts, max_post_bytes
@@ -90,7 +90,7 @@ ORDER BY name ASC;
 	defer boardRows.Close()
 
 	for boardRows.Next() {
-		var bc tchan2.BoardConfig
+		var bc tchan.BoardConfig
 		err = boardRows.Scan(&bc.Name, &bc.Description, &bc.HighlightStyle,
 			&bc.MaxThreadCount, &bc.MaxThreadLength, &bc.MaxPostBytes)
 		if err != nil {
@@ -103,14 +103,14 @@ ORDER BY name ASC;
 }
 
 // BoardConfig returns the configuration for a board.
-func (c *Opts) BoardConfig(boardName string) (tchan2.BoardConfig, bool) {
+func (c *Opts) BoardConfig(boardName string) (tchan.BoardConfig, bool) {
 	n := len(c.Boards)
 	idx := sort.Search(n, func(i int) bool {
 		return c.Boards[i].Name >= boardName
 	})
 
 	if idx == len(c.Boards) {
-		return tchan2.BoardConfig{}, false
+		return tchan.BoardConfig{}, false
 	}
 	b := c.Boards[idx]
 	return c.Boards[idx], b.Name == boardName

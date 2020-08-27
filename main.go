@@ -5,9 +5,9 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/fgahr/termchan/tchan2/backend"
-	"github.com/fgahr/termchan/tchan2/config"
-	"github.com/fgahr/termchan/tchan2/server"
+	"github.com/fgahr/termchan/tchan/backend"
+	"github.com/fgahr/termchan/tchan/config"
+	"github.com/fgahr/termchan/tchan/server"
 )
 
 func run() error {

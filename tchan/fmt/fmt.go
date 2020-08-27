@@ -5,14 +5,14 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/fgahr/termchan/tchan2"
+	"github.com/fgahr/termchan/tchan"
 )
 
 // Writer describes an entity in charge of writing a server response.
 type Writer interface {
-	WriteWelcome(boards []tchan2.BoardConfig) error
-	WriteThread(thread tchan2.Thread) error
-	WriteBoard(board tchan2.BoardOverview) error
+	WriteWelcome(boards []tchan.BoardConfig) error
+	WriteThread(thread tchan.Thread) error
+	WriteBoard(board tchan.BoardOverview) error
 	WriteError(err error) error
 }
 

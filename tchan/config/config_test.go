@@ -3,13 +3,13 @@ package config
 import (
 	"testing"
 
-	"github.com/fgahr/termchan/tchan2"
+	"github.com/fgahr/termchan/tchan"
 )
 
 func confWithBoards(boards ...string) Opts {
 	c := Opts{}
 	for _, b := range boards {
-		c.Boards = append(c.Boards, tchan2.BoardConfig{Name: b})
+		c.Boards = append(c.Boards, tchan.BoardConfig{Name: b})
 	}
 	return c
 }

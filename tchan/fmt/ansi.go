@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fgahr/termchan/tchan2"
+	"github.com/fgahr/termchan/tchan"
 )
 
 type ansiWriter struct {
@@ -79,7 +79,7 @@ var bannerChan = []string{
 	"                                      \"YUMMMMMP\"MMM    YMMYMM   \"\"` MMM     YM",
 }
 
-func (w *ansiWriter) WriteWelcome(boards []tchan2.BoardConfig) error {
+func (w *ansiWriter) WriteWelcome(boards []tchan.BoardConfig) error {
 	w.err = nil
 	for _, line := range bannerTerm {
 		w.writeln(fgGreen.FormatANSI(line))
@@ -131,7 +131,7 @@ func (w *ansiWriter) WriteWelcome(boards []tchan2.BoardConfig) error {
 	return w.err
 }
 
-func (w *ansiWriter) writePost(p tchan2.Post) {
+func (w *ansiWriter) writePost(p tchan.Post) {
 	if w.err != nil {
 		return
 	}
@@ -143,7 +143,7 @@ func (w *ansiWriter) writePost(p tchan2.Post) {
 	}
 }
 
-func (w *ansiWriter) WriteThread(t tchan2.Thread) error {
+func (w *ansiWriter) WriteThread(t tchan.Thread) error {
 	w.err = nil
 	w.hlStyle = GetStyle(t.Board.HighlightStyle)
 
@@ -167,7 +167,7 @@ func (w *ansiWriter) WriteThread(t tchan2.Thread) error {
 	return w.err
 }
 
-func (w *ansiWriter) writeThreadOverview(t tchan2.ThreadOverview, bc tchan2.BoardConfig) {
+func (w *ansiWriter) writeThreadOverview(t tchan.ThreadOverview, bc tchan.BoardConfig) {
 	if w.err != nil {
 		return
 	}
@@ -183,7 +183,7 @@ func (w *ansiWriter) writeThreadOverview(t tchan2.ThreadOverview, bc tchan2.Boar
 	w.writePost(t.OP)
 }
 
-func (w *ansiWriter) WriteBoard(board tchan2.BoardOverview) error {
+func (w *ansiWriter) WriteBoard(board tchan.BoardOverview) error {
 	w.err = nil
 	bc := board.MetaData
 	w.hlStyle = GetStyle(bc.HighlightStyle)

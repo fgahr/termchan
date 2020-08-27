@@ -3,9 +3,9 @@ package server
 import (
 	"net/http"
 
-	"github.com/fgahr/termchan/tchan2"
-	"github.com/fgahr/termchan/tchan2/backend"
-	"github.com/fgahr/termchan/tchan2/config"
+	"github.com/fgahr/termchan/tchan"
+	"github.com/fgahr/termchan/tchan/backend"
+	"github.com/fgahr/termchan/tchan/config"
 	"github.com/gorilla/mux"
 )
 
@@ -46,7 +46,7 @@ func (s *Server) handleViewBoard() http.HandlerFunc {
 		}
 
 		ok = false
-		board := tchan2.BoardOverview{MetaData: boardConf}
+		board := tchan.BoardOverview{MetaData: boardConf}
 		rw.try(func() error {
 			return s.db.PopulateBoard(rw.board, &board, &ok)
 		}, http.StatusInternalServerError, "failed to fetch board")
@@ -67,7 +67,7 @@ func (s *Server) handleViewThread() http.HandlerFunc {
 		if !ok {
 			rw.respondNoSuchBoard()
 		}
-		thr := tchan2.Thread{Board: boardConf}
+		thr := tchan.Thread{Board: boardConf}
 
 		ok = false
 		rw.try(func() error { return s.db.PopulateThread(rw.board, rw.replyID, &thr, &ok) },
@@ -91,7 +91,7 @@ func (s *Server) handleCreateThread() http.HandlerFunc {
 		rw.try(func() error { return s.db.CreateThread(rw.board, topic, &rw.post) },
 			http.StatusInternalServerError, "failed to create thread")
 
-		thr := tchan2.Thread{}
+		thr := tchan.Thread{}
 		ok := false
 		rw.try(func() error { return s.db.PopulateThread(rw.board, rw.post.ID, &thr, &ok) },
 			http.StatusInternalServerError, "failed to fetch thread for viewing")
@@ -116,7 +116,7 @@ func (s *Server) handleReplyToThread() http.HandlerFunc {
 			rw.respondNoSuchThread()
 		}
 
-		thr := tchan2.Thread{}
+		thr := tchan.Thread{}
 		rw.try(func() error { return s.db.PopulateThread(rw.board, rw.replyID, &thr, &ok) },
 			http.StatusInternalServerError, "failed to fetch thread for viewing")
 

@@ -1,4 +1,4 @@
-package tchan2
+package tchan
 
 import (
 	"time"

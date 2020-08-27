@@ -6,9 +6,9 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/fgahr/termchan/tchan2"
-	"github.com/fgahr/termchan/tchan2/config"
-	"github.com/fgahr/termchan/tchan2/util"
+	"github.com/fgahr/termchan/tchan"
+	"github.com/fgahr/termchan/tchan/config"
+	"github.com/fgahr/termchan/tchan/util"
 	"github.com/pkg/errors"
 
 	// SQLite3 bindings
@@ -52,7 +52,7 @@ func (s *sqlite) Close() error {
 	return nil
 }
 
-func (s *sqlite) PopulateBoard(boardName string, b *tchan2.BoardOverview, ok *bool) error {
+func (s *sqlite) PopulateBoard(boardName string, b *tchan.BoardOverview, ok *bool) error {
 	boardDB, boardOK := s.boardDBs[boardName]
 	if !boardOK {
 		*ok = false
@@ -77,9 +77,9 @@ LIMIT ?;
 	}
 	defer threadRows.Close()
 
-	b.Threads = make([]tchan2.ThreadOverview, 0)
+	b.Threads = make([]tchan.ThreadOverview, 0)
 	for threadRows.Next() {
-		t := tchan2.ThreadOverview{}
+		t := tchan.ThreadOverview{}
 		var createdTS, activeTS string
 		err = threadRows.Scan(&t.Topic, &t.NumReplies, &createdTS, &activeTS,
 			&t.OP.ID, &t.OP.Author, &t.OP.Content)
@@ -146,7 +146,7 @@ SELECT topic FROM thread WHERE id = ?;
 	return topic, nil
 }
 
-func (s *sqlite) PopulateThread(boardName string, postID int64, thr *tchan2.Thread, ok *bool) error {
+func (s *sqlite) PopulateThread(boardName string, postID int64, thr *tchan.Thread, ok *bool) error {
 	*ok = false
 
 	boardDB, boardOK := s.boardDBs[boardName]
@@ -179,7 +179,7 @@ ORDER BY created_at ASC;
 	defer result.Close()
 
 	for result.Next() {
-		post := tchan2.Post{}
+		post := tchan.Post{}
 		var ts string
 		err = result.Scan(&post.ID, &post.Author, &ts, &post.Content)
 		if err != nil {
@@ -196,7 +196,7 @@ ORDER BY created_at ASC;
 	return nil
 }
 
-func (s *sqlite) CreateThread(boardName string, topic string, op *tchan2.Post) error {
+func (s *sqlite) CreateThread(boardName string, topic string, op *tchan.Post) error {
 	boardDB, boardOK := s.boardDBs[boardName]
 	if !boardOK {
 		return errors.Errorf("attempting to create thread on non-existing board /%s/", boardName)
@@ -225,7 +225,7 @@ INSERT INTO post (thread_id, author, content) VALUES (?, ?, ?);
 	return err
 }
 
-func (s *sqlite) AddReply(boardName string, postID int64, post *tchan2.Post, ok *bool) error {
+func (s *sqlite) AddReply(boardName string, postID int64, post *tchan.Post, ok *bool) error {
 	boardDB, boardOK := s.boardDBs[boardName]
 	if !boardOK {
 		return errors.Errorf("attempting to add post on non-existing board /%s/", boardName)

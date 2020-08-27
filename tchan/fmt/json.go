@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"io"
 
-	"github.com/fgahr/termchan/tchan2"
+	"github.com/fgahr/termchan/tchan"
 )
 
 type jsonWriter struct {
@@ -19,15 +19,15 @@ func (w jsonWriter) write(obj interface{}) error {
 	return w.enc.Encode(obj)
 }
 
-func (w jsonWriter) WriteWelcome(boards []tchan2.BoardConfig) error {
+func (w jsonWriter) WriteWelcome(boards []tchan.BoardConfig) error {
 	return w.write(boards)
 }
 
-func (w jsonWriter) WriteThread(thread tchan2.Thread) error {
+func (w jsonWriter) WriteThread(thread tchan.Thread) error {
 	return w.write(thread)
 }
 
-func (w jsonWriter) WriteBoard(board tchan2.BoardOverview) error {
+func (w jsonWriter) WriteBoard(board tchan.BoardOverview) error {
 	return w.write(board)
 }
 
