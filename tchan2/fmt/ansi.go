@@ -167,8 +167,41 @@ func (w *ansiWriter) WriteThread(t tchan2.Thread) error {
 	return w.err
 }
 
+func (w *ansiWriter) writeThreadOverview(t tchan2.ThreadOverview, bc tchan2.BoardConfig) {
+	if w.err != nil {
+		return
+	}
+
+	rep := "replies"
+	if t.NumReplies == 1 {
+		rep = "reply"
+	}
+	w.write("/%s/%d %s (%d %s) updated %s\n",
+		w.hl(bc.Name), t.OP.ID, w.hl(t.Topic),
+		t.NumReplies, rep, t.Active.Format(time.ANSIC))
+	w.singleDivider()
+	w.writePost(t.OP)
+}
+
 func (w *ansiWriter) WriteBoard(board tchan2.BoardOverview) error {
-	return nil
+	w.err = nil
+	bc := board.MetaData
+	w.hlStyle = GetStyle(bc.HighlightStyle)
+	w.write("/%s/ - %s\n", w.hl(board.MetaData.Name), w.hl(board.MetaData.Description))
+
+	for _, thread := range board.Threads {
+		w.doubleDivider()
+		w.writeThreadOverview(thread, bc)
+	}
+
+	w.doubleDivider()
+	thr := "threads"
+	if len(board.Threads) == 1 {
+		thr = "thread"
+	}
+	w.write("%d %s\n", len(board.Threads), thr)
+
+	return w.err
 }
 
 func (w *ansiWriter) WriteError(err error) error {

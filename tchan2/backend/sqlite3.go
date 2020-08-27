@@ -66,7 +66,7 @@ func (s *sqlite) PopulateBoard(boardName string, b *tchan2.BoardOverview, ok *bo
 	*ok = true
 
 	threadRows, err := boardDB.Query(`
-SELECT t.topic, t.num_replies, t.created_at, t.active_at, op.author, op.content
+SELECT t.topic, t.num_replies, t.created_at, t.active_at, op.id, op.author, op.content
 FROM thread t INNER JOIN post op ON t.op_id = op.id
 AND t.num_replies > -1 AND t.num_replies <= ?
 ORDER BY t.active_at DESC
@@ -82,7 +82,7 @@ LIMIT ?;
 		t := tchan2.ThreadOverview{}
 		var createdTS, activeTS string
 		err = threadRows.Scan(&t.Topic, &t.NumReplies, &createdTS, &activeTS,
-			&t.OP.Author, &t.OP.Content)
+			&t.OP.ID, &t.OP.Author, &t.OP.Content)
 		if err != nil {
 			errors.Wrap(err, "failed to extract thread summary")
 		}
