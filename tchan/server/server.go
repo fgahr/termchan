@@ -108,15 +108,20 @@ func (s *Server) handleReplyToThread() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		rw := newRequestWorker(w, r, s.conf)
 
+		boardConf, ok := s.conf.BoardConfig(rw.board)
+		if !ok {
+			rw.respondNoSuchBoard()
+		}
+
 		rw.extractPost()
-		ok := false
+		ok = false
 		rw.try(func() error { return s.db.AddReply(rw.board, rw.replyID, &rw.post, &ok) },
 			http.StatusInternalServerError, "failed to persist reply")
 		if !ok {
 			rw.respondNoSuchThread()
 		}
 
-		thr := tchan.Thread{}
+		thr := tchan.Thread{Board: boardConf}
 		rw.try(func() error { return s.db.PopulateThread(rw.board, rw.replyID, &thr, &ok) },
 			http.StatusInternalServerError, "failed to fetch thread for viewing")
 

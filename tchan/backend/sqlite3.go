@@ -232,13 +232,13 @@ func (s *sqlite) AddReply(boardName string, postID int64, post *tchan.Post, ok *
 	}
 
 	postRow, err := boardDB.Query(`
-SELECT thread_id FROM post WHERE thread_id = ?;
+SELECT thread_id FROM post WHERE id = ?;
 `, postID)
 	if err != nil {
 		return err
 	}
 
-	if postRow.Next() {
+	if !postRow.Next() {
 		*ok = false
 		return nil
 	}
