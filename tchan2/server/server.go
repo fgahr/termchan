@@ -45,6 +45,7 @@ func (s *Server) handleViewBoard() http.HandlerFunc {
 			rw.respondNoSuchBoard()
 		}
 
+		ok = false
 		board := tchan2.BoardOverview{MetaData: boardConf}
 		rw.try(func() error {
 			return s.db.PopulateBoard(rw.board, &board, &ok)
@@ -62,8 +63,13 @@ func (s *Server) handleViewThread() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		rw := newRequestWorker(w, r, s.conf)
 
-		thr := tchan2.Thread{}
-		ok := false
+		boardConf, ok := s.conf.BoardConfig(rw.board)
+		if !ok {
+			rw.respondNoSuchBoard()
+		}
+		thr := tchan2.Thread{Board: boardConf}
+
+		ok = false
 		rw.try(func() error { return s.db.PopulateThread(rw.board, rw.replyID, &thr, &ok) },
 			http.StatusInternalServerError, "failed to fetch thread for viewing")
 

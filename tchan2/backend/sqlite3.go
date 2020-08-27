@@ -147,9 +147,10 @@ SELECT topic FROM thread WHERE id = ?;
 }
 
 func (s *sqlite) PopulateThread(boardName string, postID int64, thr *tchan2.Thread, ok *bool) error {
+	*ok = false
+
 	boardDB, boardOK := s.boardDBs[boardName]
 	if !boardOK {
-		*ok = false
 		return nil
 	}
 
@@ -158,19 +159,19 @@ func (s *sqlite) PopulateThread(boardName string, postID int64, thr *tchan2.Thre
 		return err
 	}
 	if !idOK {
-		*ok = false
 		return nil
 	}
 	thr.Topic, err = getTopic(boardDB, threadID)
 	if err != nil {
-		*ok = false
 		return err
 	}
 
+	*ok = true
+
 	result, err := boardDB.Query(`
-SELECT id, author, timestamp, content FROM post
+SELECT id, author, created_at, content FROM post
 WHERE thread_id = ?
-ORDER BY timestamp ASC;
+ORDER BY created_at ASC;
 `, threadID)
 	if err != nil {
 		return err
@@ -189,6 +190,7 @@ ORDER BY timestamp ASC;
 		if err != nil {
 			return err
 		}
+		thr.Posts = append(thr.Posts, post)
 	}
 
 	return nil
@@ -200,22 +202,26 @@ func (s *sqlite) CreateThread(boardName string, topic string, op *tchan2.Post) e
 		return errors.Errorf("attempting to create thread on non-existing board /%s/", boardName)
 	}
 
-	result, err := boardDB.Exec(`
+	tresult, err := boardDB.Exec(`
 INSERT INTO thread (topic) VALUES (?);
 `, topic)
 	if err != nil {
 		return err
 	}
 
-	threadID, err := result.LastInsertId()
+	threadID, err := tresult.LastInsertId()
 	if err != nil {
 		return err
 	}
 
-	_, err = boardDB.Exec(`
+	presult, err := boardDB.Exec(`
 INSERT INTO post (thread_id, author, content) VALUES (?, ?, ?);
 `, threadID, op.Author, op.Content)
+	if err != nil {
+		return err
+	}
 
+	op.ID, err = presult.LastInsertId()
 	return err
 }
 

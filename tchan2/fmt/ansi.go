@@ -3,6 +3,8 @@ package fmt
 import (
 	"fmt"
 	"io"
+	"strings"
+	"time"
 
 	"github.com/fgahr/termchan/tchan2"
 )
@@ -78,6 +80,7 @@ var bannerChan = []string{
 }
 
 func (w *ansiWriter) WriteWelcome(boards []tchan2.BoardConfig) error {
+	w.err = nil
 	for _, line := range bannerTerm {
 		w.writeln(fgGreen.FormatANSI(line))
 	}
@@ -128,8 +131,40 @@ func (w *ansiWriter) WriteWelcome(boards []tchan2.BoardConfig) error {
 	return w.err
 }
 
-func (w *ansiWriter) WriteThread(thread tchan2.Thread) error {
-	return nil
+func (w *ansiWriter) writePost(p tchan2.Post) {
+	if w.err != nil {
+		return
+	}
+
+	w.write("[%d] %s wrote at %s\n", p.ID, p.Author, p.Timestamp.Format(time.ANSIC))
+	w.writeln()
+	for _, line := range strings.Split(p.Content, "\n") {
+		w.writeln(line)
+	}
+}
+
+func (w *ansiWriter) WriteThread(t tchan2.Thread) error {
+	w.err = nil
+	w.hlStyle = GetStyle(t.Board.HighlightStyle)
+
+	w.write("/%s/%d %s\n", w.hl(t.Board.Name), t.Posts[0].ID, w.hl(t.Topic))
+	w.doubleDivider()
+
+	for i, post := range t.Posts {
+		if i > 0 {
+			w.singleDivider()
+		}
+		w.writePost(post)
+	}
+
+	w.doubleDivider()
+	numReplies := len(t.Posts) - 1
+	rep := "replies"
+	if numReplies == 1 {
+		rep = "reply"
+	}
+	w.write("%d %s\n", numReplies, rep)
+	return w.err
 }
 
 func (w *ansiWriter) WriteBoard(board tchan2.BoardOverview) error {
@@ -137,5 +172,6 @@ func (w *ansiWriter) WriteBoard(board tchan2.BoardOverview) error {
 }
 
 func (w *ansiWriter) WriteError(err error) error {
-	return nil
+	w.write("%s: %s\n", fgRed.FormatANSI("ERROR"), err.Error())
+	return w.err
 }
