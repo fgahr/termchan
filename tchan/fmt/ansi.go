@@ -87,13 +87,16 @@ func (w *ansiWriter) WriteWelcome(boards []tchan.BoardConfig) error {
 	for _, line := range bannerChan {
 		w.writeln(fgBlue.FormatANSI(line))
 	}
-	w.writeln("Welcome! Available boards:")
+	w.writeln("Welcome!")
 	w.doubleDivider()
+	w.writeln("Boards")
 	for _, b := range boards {
-		style := GetStyle(b.HighlightStyle)
+		style := getStyle(b.HighlightStyle)
 		w.write("  /%s/ - %s\n", style.FormatANSI(b.Name), style.FormatANSI(b.Description))
 	}
-	w.doubleDivider()
+	w.singleDivider()
+	w.writeln("How do I use it?")
+	w.singleDivider()
 
 	w.hlStyle = fgGreen
 	w.writeln(w.hl("Viewing"))
@@ -145,7 +148,7 @@ func (w *ansiWriter) writePost(p tchan.Post) {
 
 func (w *ansiWriter) WriteThread(t tchan.Thread) error {
 	w.err = nil
-	w.hlStyle = GetStyle(t.Board.HighlightStyle)
+	w.hlStyle = getStyle(t.Board.HighlightStyle)
 
 	w.write("/%s/%d %s\n", w.hl(t.Board.Name), t.Posts[0].ID, w.hl(t.Topic))
 	w.doubleDivider()
@@ -186,7 +189,7 @@ func (w *ansiWriter) writeThreadOverview(t tchan.ThreadOverview, bc tchan.BoardC
 func (w *ansiWriter) WriteBoard(board tchan.BoardOverview) error {
 	w.err = nil
 	bc := board.MetaData
-	w.hlStyle = GetStyle(bc.HighlightStyle)
+	w.hlStyle = getStyle(bc.HighlightStyle)
 	w.write("/%s/ - %s\n", w.hl(board.MetaData.Name), w.hl(board.MetaData.Description))
 
 	for _, thread := range board.Threads {

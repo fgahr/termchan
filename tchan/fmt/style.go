@@ -32,8 +32,8 @@ func (sty simpleStyle) FormatANSI(s string) string {
 	return fmt.Sprintf("%s%s%s", sty, s, ansiReset)
 }
 
-// GetStyle finds a formatting style by name.
-func GetStyle(name string) Style {
+// getStyle finds a formatting style by name.
+func getStyle(name string) Style {
 	if s, ok := styleNames[name]; ok {
 		return s
 	}
