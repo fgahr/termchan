@@ -75,9 +75,7 @@ func (c *Opts) Read() error {
 		return err
 	}
 
-	// We initialize it here because we want to use this function for
-	// refreshing a stale config as well.
-	c.Boards = make([]tchan.BoardConfig, 0)
+	boards := make([]tchan.BoardConfig, 0)
 
 	boardRows, err := db.Query(`
 SELECT name, description, style, max_threads, max_posts, max_post_bytes
@@ -96,8 +94,11 @@ ORDER BY name ASC;
 		if err != nil {
 			return errors.Wrap(err, "failed to read board definition from config file")
 		}
-		c.Boards = append(c.Boards, bc)
+		boards = append(c.Boards, bc)
 	}
+
+	// Only accept the new board list of it was read without errors.
+	c.Boards = boards
 
 	return nil
 }

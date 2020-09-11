@@ -2,6 +2,7 @@ package server
 
 import (
 	"net/http"
+	"sync"
 
 	"github.com/fgahr/termchan/tchan"
 	"github.com/fgahr/termchan/tchan/backend"
@@ -11,17 +12,34 @@ import (
 
 // Server connects all aspects of the termchan application.
 type Server struct {
-	conf   *config.Opts
-	db     backend.DB
-	router *mux.Router
+	conf     *config.Opts
+	db       backend.DB
+	router   *mux.Router
+	confLock *sync.RWMutex
 }
 
 // New creates a new server without configuration or backend.
 // In order to be usable these still need to be set up.
 func New(opts *config.Opts, db backend.DB) *Server {
-	s := &Server{conf: opts, db: db, router: mux.NewRouter()}
+	s := &Server{
+		conf:     opts,
+		db:       db,
+		router:   mux.NewRouter(),
+		confLock: new(sync.RWMutex),
+	}
 	s.routes()
 	return s
+}
+
+func (s *Server) ReloadConfig() error {
+	s.confLock.Lock()
+	defer s.confLock.Unlock()
+
+	if err := s.conf.Read(); err != nil {
+		return err
+	}
+
+	return s.db.Refresh()
 }
 
 // ServeHTTP handles HTTP requests.
@@ -29,15 +47,23 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	s.router.ServeHTTP(w, r)
 }
 
-func (s *Server) handleWelcome() http.HandlerFunc {
+func (s *Server) confReader(f http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		rw := newRequestWorker(w, r, s.conf)
-		rw.respondWelcome()
+		s.confLock.RLock()
+		defer s.confLock.RUnlock()
+		f(w, r)
 	}
 }
 
+func (s *Server) handleWelcome() http.HandlerFunc {
+	return s.confReader(func(w http.ResponseWriter, r *http.Request) {
+		rw := newRequestWorker(w, r, s.conf)
+		rw.respondWelcome()
+	})
+}
+
 func (s *Server) handleViewBoard() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+	return s.confReader(func(w http.ResponseWriter, r *http.Request) {
 		rw := newRequestWorker(w, r, s.conf)
 
 		boardConf, ok := s.conf.BoardConfig(rw.board)
@@ -56,11 +82,11 @@ func (s *Server) handleViewBoard() http.HandlerFunc {
 		} else {
 			rw.respondNoSuchBoard()
 		}
-	}
+	})
 }
 
 func (s *Server) handleViewThread() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+	return s.confReader(func(w http.ResponseWriter, r *http.Request) {
 		rw := newRequestWorker(w, r, s.conf)
 
 		boardConf, ok := s.conf.BoardConfig(rw.board)
@@ -78,11 +104,11 @@ func (s *Server) handleViewThread() http.HandlerFunc {
 		} else {
 			rw.respondNoSuchThread()
 		}
-	}
+	})
 }
 
 func (s *Server) handleCreateThread() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+	return s.confReader(func(w http.ResponseWriter, r *http.Request) {
 		rw := newRequestWorker(w, r, s.conf)
 
 		rw.extractPost()
@@ -101,7 +127,7 @@ func (s *Server) handleCreateThread() http.HandlerFunc {
 		} else {
 			rw.respondNoSuchThread()
 		}
-	}
+	})
 }
 
 func (s *Server) handleReplyToThread() http.HandlerFunc {

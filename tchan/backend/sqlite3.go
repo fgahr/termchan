@@ -32,14 +32,22 @@ func (s *sqlite) Init() error {
 		}
 	}
 
-	s.boardDBs = make(map[string]*sql.DB)
+	boards := make(map[string]*sql.DB)
 	for _, board := range s.conf.Boards {
 		if err := s.initBoardDB(board.Name); err != nil {
 			return err
 		}
 	}
 
+	s.boardDBs = boards
 	return nil
+}
+
+func (s *sqlite) Refresh() error {
+	if err := s.Close(); err != nil {
+		return err
+	}
+	return s.Init()
 }
 
 func (s *sqlite) Close() error {
