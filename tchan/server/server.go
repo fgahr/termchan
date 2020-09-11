@@ -1,6 +1,7 @@
 package server
 
 import (
+	"log"
 	"net/http"
 	"sync"
 
@@ -35,6 +36,7 @@ func (s *Server) ReloadConfig() error {
 	s.confLock.Lock()
 	defer s.confLock.Unlock()
 
+	log.Println("reloading configuration")
 	if err := s.conf.Read(); err != nil {
 		return err
 	}

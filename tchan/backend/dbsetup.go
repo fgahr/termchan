@@ -7,13 +7,13 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (s *sqlite) initBoardDB(boardName string) error {
+func (s *sqlite) initBoardDB(boardName string) (*sql.DB, error) {
 	path := filepath.Join(s.boardsDirectory, boardName+".db")
 	var boardDB *sql.DB
 	var err error
 
 	if boardDB, err = sql.Open("sqlite3", path); err != nil {
-		return errors.Wrapf(err, "failed to connect to %s", path)
+		return boardDB, errors.Wrapf(err, "failed to connect to %s", path)
 	}
 
 	_, err = boardDB.Exec(`
@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS thread (
 );
 `)
 	if err != nil {
-		return errors.Wrapf(err, "failed to create /%s/ thread table", boardName)
+		return boardDB, errors.Wrapf(err, "failed to create /%s/ thread table", boardName)
 	}
 
 	_, err = boardDB.Exec(`
@@ -42,14 +42,14 @@ CREATE TABLE IF NOT EXISTS post (
 );
 `)
 	if err != nil {
-		return errors.Wrapf(err, "failed to create /%s/ post table", boardName)
+		return boardDB, errors.Wrapf(err, "failed to create /%s/ post table", boardName)
 	}
 
 	_, err = boardDB.Exec(`
 CREATE INDEX IF NOT EXISTS post_by_thread_id ON post(thread_id);
 `)
 	if err != nil {
-		return errors.Wrapf(err, "failed to create index post(thread_id) on /%s/", boardName)
+		return boardDB, errors.Wrapf(err, "failed to create index post(thread_id) on /%s/", boardName)
 	}
 
 	_, err = boardDB.Exec(`
@@ -73,9 +73,8 @@ WHERE id = NEW.thread_id;
 END;
 `)
 	if err != nil {
-		return errors.Wrapf(err, "failed to create thread update trigger on /%s/", boardName)
+		return boardDB, errors.Wrapf(err, "failed to create thread update trigger on /%s/", boardName)
 	}
 
-	s.boardDBs[boardName] = boardDB
-	return nil
+	return boardDB, nil
 }

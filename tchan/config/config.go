@@ -94,7 +94,7 @@ ORDER BY name ASC;
 		if err != nil {
 			return errors.Wrap(err, "failed to read board definition from config file")
 		}
-		boards = append(c.Boards, bc)
+		boards = append(boards, bc)
 	}
 
 	// Only accept the new board list of it was read without errors.

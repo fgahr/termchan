@@ -34,9 +34,11 @@ func (s *sqlite) Init() error {
 
 	boards := make(map[string]*sql.DB)
 	for _, board := range s.conf.Boards {
-		if err := s.initBoardDB(board.Name); err != nil {
+		bdb, err := s.initBoardDB(board.Name)
+		if err != nil {
 			return err
 		}
+		boards[board.Name] = bdb
 	}
 
 	s.boardDBs = boards
