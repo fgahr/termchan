@@ -139,7 +139,5 @@ $ curl -s 'localhost:8088/b?format=json' | jq
 
 # TODOs
 
-- Read configuration options from the database
-- Reloading the board list or colors from the db when receiving, say, SIGHUP
 - Enable banning of users (requires re-enabling tracking of IP addresses, should
   probably mention that in the welcome message)
