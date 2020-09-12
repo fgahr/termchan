@@ -95,9 +95,22 @@ Defining a style is optional but recommended. Recognized style names are, as
 of writing, `none`, `black`, `red`, `green`, `yellow`, `blue`, `magenta`,
 `cyan`, and `white`.
 
+After changing the board list, restart the server or send a SIGHUP signal, e.g.
+```
+kill -s HUP $(pgrep termchan)
+```
+to make it reload its config.
+
 ## Usage
 
-Assuming the server is listening on port 8088 and has a board `/b/`:
+### With tccli
+
+There is the [tccli](https://github.com/fgahr/termchan-cli) tool to simplify
+common operations without needing to interact with `curl` directly.
+
+### With curl
+
+Assuming the server is listening on port 8088 and has a board `/b/`, post with
 
 ```
 $ curl -s 'localhost:8088/b'  \
