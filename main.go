@@ -1,39 +1,59 @@
 package main
 
 import (
+	"flag"
+	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 
-	"github.com/fgahr/termchan/tchan"
+	"github.com/fgahr/termchan/tchan/backend"
 	"github.com/fgahr/termchan/tchan/config"
-	"github.com/gorilla/mux"
-	"github.com/pkg/errors"
+	"github.com/fgahr/termchan/tchan/server"
 )
 
-func main() {
+func run() error {
 	var err error
+	var wd string
+	var port int
 
-	if err = tchan.Initialize(); err != nil {
-		log.Fatal(errors.Wrap(err, "failed to initialize termchan"))
+	flag.StringVar(&wd, "d", "./", "the base (configuration) directory for the service")
+	flag.IntVar(&port, "p", 8088, "the port for the server to listen on")
+	flag.Parse()
+
+	conf := config.New(wd)
+	if err = conf.Read(); err != nil {
+		return err
 	}
 
-	router := mux.NewRouter()
-	router.HandleFunc("/", tchan.HandleWelcome).Methods(http.MethodGet)
-	router.HandleFunc("/{board:[a-z]+}", tchan.ViewBoard).Methods(http.MethodGet)
-	router.HandleFunc("/{board:[a-z]+}/", tchan.ViewBoard).Methods(http.MethodGet)
-	router.HandleFunc("/{board:[a-z]+}", tchan.CreateThread).Methods(http.MethodPost)
-	router.HandleFunc("/{board:[a-z]+}/", tchan.CreateThread).Methods(http.MethodPost)
-	router.HandleFunc("/{board:[a-z]+}/{id:[0-9]+}", tchan.ViewThread).Methods(http.MethodGet)
-	router.HandleFunc("/{board:[a-z]+}/{id:[0-9]+}", tchan.ReplyToThread).Methods(http.MethodPost)
-
-	log.Printf("Serving HTTP on %s\n", config.Current.PortString())
-	err = http.ListenAndServe(config.Current.PortString(), router)
-	if err != nil {
-		log.Println(err)
+	db := backend.New(conf)
+	if err = db.Init(); err != nil {
+		return err
 	}
 
-	err = tchan.Shutdown()
-	if err != nil {
+	srv := server.New(conf, db)
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGHUP)
+	defer close(sigChan)
+	go func() {
+		for sig := range sigChan {
+			switch sig {
+			case syscall.SIGHUP:
+				srv.ReloadConfig()
+			default:
+				panic("unexpected signal")
+			}
+		}
+	}()
+
+	log.Printf("serving HTTP on port %d", port)
+	return http.ListenAndServe(fmt.Sprintf(":%d", port), srv)
+}
+
+func main() {
+	if err := run(); err != nil {
 		log.Fatal(err)
 	}
 }

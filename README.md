@@ -36,10 +36,10 @@ $ curl -s 'localhost:8088/'
 Welcome!
 ================================================================================
 Boards
-    /b/ - Random
-    /g/ - Technology
-    /m/ - Meta
-    /v/ - Games
+  /b/ - Random
+  /g/ - Technology
+  /m/ - Meta
+  /v/ - Games
 --------------------------------------------------------------------------------
 How do I use it?
 --------------------------------------------------------------------------------
@@ -73,10 +73,31 @@ Post (i.e. create) a thread (*)
 HAVE FUN!
 ```
 
+## Setup
+
+```
+termchan -h
+Usage of termchan:
+  -d string
+    	the base (configuration) directory for the service (default "./")
+  -p int
+    	the port for the server to listen on (default 8088)
+```
+The server will read or create a `config.db` config file and a `boards`
+directory to store the database files for the individual boards.
+
+You can add new boards to the `config.db` file with the sqlite3 command and
+```
+INSERT INTO board (name, description, style)
+VALUES ('a', 'a board', 'red');
+```
+Defining a style is optional but recommended. Recognized style names are, as
+of writing, `none`, `black`, `red`, `green`, `yellow`, `blue`, `magenta`,
+`cyan`, and `white`.
+
 ## Usage
 
-The server starts listening on port `:8088` and has a couple of boards.
-They will be empty initially but you can add a thread via
+Assuming the server is listening on port 8088 and has a board `/b/`:
 
 ```
 $ curl -s 'localhost:8088/b'  \
@@ -118,7 +139,5 @@ $ curl -s 'localhost:8088/b?format=json' | jq
 
 # TODOs
 
-- Read configuration options from the database
-- Reloading the board list or colors from the db when receiving, say, SIGHUP
 - Enable banning of users (requires re-enabling tracking of IP addresses, should
   probably mention that in the welcome message)
