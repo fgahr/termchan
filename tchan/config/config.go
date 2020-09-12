@@ -27,7 +27,7 @@ func New(workingDirectory string) *Opts {
 func (c *Opts) connectDB() (*sql.DB, error) {
 	var err error
 
-	dbFile := filepath.Join(c.WorkingDirectory, "global.db")
+	dbFile := filepath.Join(c.WorkingDirectory, "config.db")
 	if _, err = os.Stat(dbFile); os.IsNotExist(err) {
 		var f *os.File
 		f, err = os.Create(dbFile)
