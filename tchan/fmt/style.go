@@ -2,22 +2,11 @@ package fmt
 
 import "fmt"
 
-// Available ANSI styles
-const (
-	fgBlack   simpleStyle = "\u001b[30m"
-	fgRed     simpleStyle = "\u001b[31m"
-	fgGreen   simpleStyle = "\u001b[32m"
-	fgYellow  simpleStyle = "\u001b[33m"
-	fgBlue    simpleStyle = "\u001b[34m"
-	fgMagenta simpleStyle = "\u001b[35m"
-	fgCyan    simpleStyle = "\u001b[36m"
-	fgWhite   simpleStyle = "\u001b[37m"
-	ansiReset             = "\u001b[0m"
-)
-
 // Style handles formatting of a piece of output.
 type Style interface {
 	FormatANSI(s string) string
+	DefineCSS() string
+	FormatHTML(s string) string
 }
 
 type noStyle struct{}
@@ -26,31 +15,62 @@ func (noStyle) FormatANSI(s string) string {
 	return s
 }
 
-type simpleStyle string
+func (noStyle) DefineCSS() string {
+	return ""
+}
 
-func (sty simpleStyle) FormatANSI(s string) string {
-	return fmt.Sprintf("%s%s%s", sty, s, ansiReset)
+func (noStyle) FormatHTML(s string) string {
+	return s
+}
+
+type color string
+
+type style struct {
+	name        string
+	ansiNumeral int
+	fg          color
+}
+
+func (sty style) FormatANSI(s string) string {
+	return fmt.Sprintf("\u001b[%dm%s\u001b[0m", sty.ansiNumeral, s)
+}
+
+func (sty style) DefineCSS() string {
+	return fmt.Sprintf(".%s { color: %s; }", sty.name, sty.fg)
+}
+
+func (sty style) FormatHTML(s string) string {
+	return fmt.Sprintf("<span class=\"%s\">%s</span>", sty.name, s)
+}
+
+var (
+	fgBlack   = style{"black", 30, "#000000"}
+	fgRed     = style{"red", 31, "#ff0000"}
+	fgGreen   = style{"green", 32, "#00ff00"}
+	fgYellow  = style{"yellow", 33, "#ffff00"}
+	fgBlue    = style{"blue", 34, "#0000ff"}
+	fgMagenta = style{"magenta", 35, "#ff00ff"}
+	fgCyan    = style{"cyan", 36, "#00ffff"}
+	fgWhite   = style{"white", 37, "#ffffff"}
+)
+
+var allStyles []style = []style{
+	{"black", 30, "#000000"},
+	{"red", 31, "#ff0000"},
+	{"green", 32, "#00ff00"},
+	{"yellow", 33, "#ffff00"},
+	{"blue", 34, "#0000ff"},
+	{"magenta", 35, "#ff00ff"},
+	{"cyan", 36, "#00ffff"},
+	{"white", 37, "#ffffff"},
 }
 
 // getStyle finds a formatting style by name.
 func getStyle(name string) Style {
-	if s, ok := styleNames[name]; ok {
-		return s
+	for _, sty := range allStyles {
+		if sty.name == name {
+			return sty
+		}
 	}
-	return simpleStyle(fgWhite)
-}
-
-var styleNames map[string]Style
-
-func init() {
-	styleNames = make(map[string]Style)
-	styleNames["none"] = noStyle{}
-	styleNames["black"] = fgBlack
-	styleNames["red"] = fgRed
-	styleNames["green"] = fgGreen
-	styleNames["yellow"] = fgYellow
-	styleNames["blue"] = fgBlue
-	styleNames["magenta"] = fgMagenta
-	styleNames["cyan"] = fgCyan
-	styleNames["white"] = fgWhite
+	return noStyle{}
 }
