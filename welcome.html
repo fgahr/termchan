@@ -1,0 +1,75 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>termchan</title>
+<style>
+<!--
+body { color: #ffffff; background-color: #202020; }
+.black { color: #000000; }
+.red { color: #ff0000; }
+.green { color: #00ff00; }
+.yellow { color: #ffff00; }
+.blue { color: #0000ff; }
+.magenta { color: #ff00ff; }
+.cyan { color: #00ffff; }
+.white { color: #ffffff; }
+-->
+</style>
+</head>
+<body>
+<pre>
+<span class="green">  ::::::::::::.,:::::: :::::::..   .        :</span>
+<span class="green">  ;;;;;;;;'''';;;;'''' ;;;;``;;;;  ;;,.    ;;;</span>
+<span class="green">       [[      [[cccc   [[[,/[[['  [[[[, ,[[[[,</span>
+<span class="green">       $$      $$""""   $$$$$$c    $$$$$$$$"$$$</span>
+<span class="green">       88,     888oo,__ 888b "88bo,888 Y88" 888o</span>
+<span class="green">       MMM     """"YUMMMMMMM   "W" MMM  M'  "MMM</span>
+<span class="blue">                                      .,-:::::   ::   .:   :::.   :::.    :::.</span>
+<span class="blue">                                    ,;;;'````'  ,;;   ;;,  ;;`;;  `;;;;,  `;;;</span>
+<span class="blue">                                    [[[        ,[[[,,,[[[ ,[[ '[[,  [[[[[. '[[</span>
+<span class="blue">                                    $$$        "$$$"""$$$c$$$cc$$$c $$$ "Y$c$$</span>
+<span class="blue">                                    `88bo,__,o, 888   "88o888   888,888    Y88</span>
+<span class="blue">                                      "YUMMMMMP"MMM    YMMYMM   ""` MMM     YM</span>
+Welcome!
+<span class="black">================================================================================</span>
+Boards
+  /<span class="yellow">b</span>/ - <span class="yellow">random</span>
+  /<span class="green">g</span>/ - <span class="green">technology</span>
+<span class="black">--------------------------------------------------------------------------------</span>
+How do I use it?
+<span class="black">--------------------------------------------------------------------------------</span>
+<span class="green">Viewing</span>
+<span class="black">--------------------------------------------------------------------------------</span>
+<span class="green">View</span> a board (e.g. /g/)
+  curl -s 'localhost:8088/g'
+<span class="black">--------------------------------------------------------------------------------</span>
+<span class="green">View</span> a board as HTML (e.g. /m/)
+  curl -s 'localhost:8088/m?format=html'
+<span class="black">--------------------------------------------------------------------------------</span>
+<span class="green">View</span> a thread (e.g. thread #23 on /v/)
+  curl -s 'localhost:8088/v/23'
+<span class="black">--------------------------------------------------------------------------------</span>
+<span class="green">View</span> as JSON
+  curl -s 'localhost:8088/d/69?format=json'
+<span class="black">================================================================================</span>
+<span class="blue">Posting</span>
+<span class="black">--------------------------------------------------------------------------------</span>
+<span class="blue">Post</span> a reply to a thread (<span class="blue">*</span>)
+  curl -s 'localhost:8088/g/42' \
+      --data-urlencode "format=json" \
+      --data-urlencode "name=ilovebsd" \
+      --data-urlencode "content=Have you considered OpenBSD?"
+<span class="black">--------------------------------------------------------------------------------</span>
+<span class="blue">Post</span> (i.e. create) a thread (<span class="blue">*</span>)
+  curl -s 'localhost:8088/b' \
+      --data-urlencode "name=m00t" \
+      --data-urlencode "topic=Candlejack" \
+      --data-urlencode "content=I'm not afraid of him, what's he gon-"
+<span class="black">--------------------------------------------------------------------------------</span>
+(<span class="blue">*</span>) fields other than content are optional, board/thread has to exist
+<span class="black">================================================================================</span>
+<span class="green">HAVE</span> <span class="blue">FUN</span>!
+</pre>
+</body>
+</html>

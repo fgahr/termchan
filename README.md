@@ -17,7 +17,8 @@ Afterwards, build the project with `go build`, then run with `./termchan`
 ## Overview
 
 When accessing `/` without any parameters, you will be greeted with a banner and
-usage information.
+usage information. An example of HTML output for the banner is
+[here](welcome.html).
 
 ```
 $ curl -s 'localhost:8088/'
@@ -47,6 +48,9 @@ Viewing
 ================================================================================
 View a board (e.g. /g/)
   curl -s 'localhost:8088/g'
+--------------------------------------------------------------------------------
+View a board as HTML (e.g. /m/)
+  curl -s 'localhost:8088/m?format=html'
 --------------------------------------------------------------------------------
 View a thread (e.g. thread #23 on /v/)
   curl -s 'localhost:8088/v/23'
