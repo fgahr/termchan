@@ -21,6 +21,8 @@ func GetWriter(params url.Values, r *http.Request, w io.Writer) Writer {
 	switch params.Get("format") {
 	case "json":
 		return newJSONWriter(w)
+	case "html":
+		return newHTMLWriter(r.Host, w)
 	default:
 		return newANSIWriter(r.Host, w)
 	}
