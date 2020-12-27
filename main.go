@@ -2,38 +2,35 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"log"
-	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 
 	"github.com/fgahr/termchan/tchan/backend"
 	"github.com/fgahr/termchan/tchan/config"
-	"github.com/fgahr/termchan/tchan/server"
+	"github.com/fgahr/termchan/tchan/http"
 )
 
 func run() error {
-	var err error
-	var wd string
-	var port int
+	var conf config.Opts
 
-	flag.StringVar(&wd, "d", "./", "the base (configuration) directory for the service")
-	flag.IntVar(&port, "p", 8088, "the port for the server to listen on")
+	var err error
+
+	flag.StringVar(&conf.WorkingDirectory, "d", "./", "the base (configuration) directory for the service")
+	flag.IntVar(&conf.Port, "p", 8088, "the port for the server to listen on")
 	flag.Parse()
 
-	conf := config.New(wd)
 	if err = conf.Read(); err != nil {
 		return err
 	}
 
-	db := backend.New(conf)
+	db := backend.New(&conf)
 	if err = db.Init(); err != nil {
 		return err
 	}
 
-	srv := server.New(conf, db)
+	srv := http.NewServer(&conf, db)
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGHUP)
 	defer close(sigChan)
@@ -48,8 +45,7 @@ func run() error {
 		}
 	}()
 
-	log.Printf("serving HTTP on port %d", port)
-	return http.ListenAndServe(fmt.Sprintf(":%d", port), srv)
+	return srv.ServeHTTP()
 }
 
 func main() {

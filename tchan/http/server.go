@@ -1,6 +1,7 @@
-package server
+package http
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"sync"
@@ -21,7 +22,7 @@ type Server struct {
 
 // New creates a new server without configuration or backend.
 // In order to be usable these still need to be set up.
-func New(opts *config.Opts, db backend.DB) *Server {
+func NewServer(opts *config.Opts, db backend.DB) *Server {
 	s := &Server{
 		conf:     opts,
 		db:       db,
@@ -45,8 +46,13 @@ func (s *Server) ReloadConfig() error {
 }
 
 // ServeHTTP handles HTTP requests.
-func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	s.router.ServeHTTP(w, r)
+func (s *Server) ServeHTTP() error {
+	log.Printf("serving HTTP on port %d", s.conf.Port)
+	return http.ListenAndServe(s.portString(), s.router)
+}
+
+func (s *Server) portString() string {
+	return fmt.Sprintf(":%d", s.conf.Port)
 }
 
 func (s *Server) confReader(f http.HandlerFunc) http.HandlerFunc {

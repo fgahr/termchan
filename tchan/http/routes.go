@@ -1,4 +1,4 @@
-package server
+package http
 
 func (s *Server) routes() {
 	s.router.HandleFunc("/", s.handleWelcome()).Methods("GET")
