@@ -9,6 +9,7 @@ import (
 	"github.com/fgahr/termchan/tchan"
 	"github.com/fgahr/termchan/tchan/backend"
 	"github.com/fgahr/termchan/tchan/config"
+	"github.com/fgahr/termchan/tchan/html"
 	"github.com/gorilla/mux"
 )
 
@@ -18,6 +19,7 @@ type Server struct {
 	db       backend.DB
 	router   *mux.Router
 	confLock *sync.RWMutex
+	htmlSet  html.TemplateSet
 }
 
 // New creates a new server with configuration and backend.
