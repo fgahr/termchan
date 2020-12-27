@@ -115,8 +115,8 @@ LIMIT ?;
 	return nil
 }
 
-func getThreadID(db *sql.DB, postID int64) (int, bool, error) {
-	threadID := -1
+func getThreadID(db *sql.DB, postID int64) (int64, bool, error) {
+	var threadID int64
 	result, err := db.Query(`
 SELECT thread_id FROM post WHERE id = ?;
 `, postID)
@@ -135,7 +135,7 @@ SELECT thread_id FROM post WHERE id = ?;
 	return threadID, true, nil
 }
 
-func getTopic(db *sql.DB, threadID int) (string, error) {
+func getTopic(db *sql.DB, threadID int64) (string, error) {
 	topic := ""
 	result, err := db.Query(`
 SELECT topic FROM thread WHERE id = ?;
@@ -145,12 +145,12 @@ SELECT topic FROM thread WHERE id = ?;
 	}
 	defer result.Close()
 	if !result.Next() {
-		return topic, errors.Errorf("no thread table entry for thread %s", threadID)
+		return topic, errors.Errorf("no thread table entry for thread %d", threadID)
 	}
 
 	err = result.Scan(&topic)
 	if err != nil {
-		return topic, errors.Errorf("invalid topic for thread %s", threadID)
+		return topic, errors.Errorf("invalid topic for thread %d", threadID)
 	}
 
 	return topic, nil
