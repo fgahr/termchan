@@ -1,0 +1,51 @@
+{{ .FgGreen }}::::::::::::.,:::::: :::::::..   .        :     {{ .End }}
+{{ .FgGreen }};;;;;;;;'''';;;;'''' ;;;;``;;;;  ;;,.    ;;;    {{ .End }}
+{{ .FgGreen }}     [[      [[cccc   [[[,/[[['  [[[[, ,[[[[,   {{ .End }}
+{{ .FgGreen }}     $$      $$""""   $$$$$$c    $$$$$$$$"$$$   {{ .End }}
+{{ .FgGreen }}     88,     888oo,__ 888b "88bo,888 Y88" 888o  {{ .End }}
+{{ .FgGreen }}     MMM     """"YUMMMMMMM   "W" MMM  M'  "MMM  {{ .End }}
+{{ .FgBlue }}                                    .,-:::::   ::   .:   :::.   :::.    :::. {{ .End }}
+{{ .FgBlue }}                                  ,;;;'````'  ,;;   ;;,  ;;`;;  `;;;;,  `;;; {{ .End }}
+{{ .FgBlue }}                                  [[[        ,[[[,,,[[[ ,[[ '[[,  [[[[[. '[[ {{ .End }}
+{{ .FgBlue }}                                  $$$        "$$$"""$$$c$$$cc$$$c $$$ "Y$c$$ {{ .End }}
+{{ .FgBlue }}                                  `88bo,__,o, 888   "88o888   888,888    Y88 {{ .End }}
+{{ .FgBlue }}                                    "YUMMMMMP"MMM    YMMYMM   ""` MMM     YM {{ .End }}
+Welcome!
+{{ .Separator.Double }}
+Boards
+{{ range .Boards }}
+{{ . | formatBoard }}
+{{ end }}
+{{ .Separator.Single }}
+How do I use it?
+{{ .Separator.Double }}
+{{ .FgGreen }}Viewing{{ .End }}
+{{ .Separator.Single }}
+{{ .FgGreen }}View{{ .End }} a board (e.g. /g/)
+  curl -s '{{ .Hostname }}/g'
+{{ .Separator.Single }}
+{{ .FgGreen }}View{{ .End }} a board as HTML (e.g. /m/)
+  curl -s '{{ .Hostname }}/m?format=html'
+{{ .Separator.Single }}
+{{ .FgGreen }}View{{ .End }} a thread (e.g. thread #23 on /v/)
+  curl -s '{{ .Hostname}}/v/23'
+{{ .Separator.Single }}
+{{ .FgGreen }}View{{ .End }} as JSON
+  curl -s '{{ .Hostname }}/d/69?format=json'
+{{ .Separator.Double }}
+{{ .FgBlue }}Posting{{ .End }}
+{{ .FgBlue }}Post{{ .End }} a reply to a thread ({{ .FgBlue }}*{{ .End }})
+  curl -s '{{ .Hostname }}/g/42' \
+      --data-urlencode "format=json" \
+      --data-urlencode "name=ilovebsd" \
+      --data-urlencode "content=Have you considered OpenBSD?"
+{{ .Separator.Single }}
+{{ .FgBlue }}Post{{ .End }} (i.e. create) a thread ({{ .FgBlue }}*{{ .End }})
+  curl -s '{{ .Hostname }}/b' \
+      --data-urlencode "name=m00t" \
+      --data-urlencode "topic=Candlejack" \
+      --data-urlencode "content=I'm not afraid of him, what's he gon-"
+{{ .Separator.Single }}
+({{ .FgBlue }}*{{ .End }}) fields other than content are optional, thread/board has to exist.
+{{ .Separator.Double }}
+{{ .FgGreen }}HAVE{{ .End }} {{ .FgBlue }}FUN{{ .End }}!
