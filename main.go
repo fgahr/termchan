@@ -40,7 +40,7 @@ func run() error {
 			case syscall.SIGHUP:
 				srv.ReloadConfig()
 			default:
-				panic("unexpected signal")
+				log.Printf("Unexpected signal: %v", sig)
 			}
 		}
 	}()

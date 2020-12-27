@@ -20,8 +20,8 @@ type Server struct {
 	confLock *sync.RWMutex
 }
 
-// New creates a new server without configuration or backend.
-// In order to be usable these still need to be set up.
+// New creates a new server with configuration and backend.
+// Backend is assumed to be fully set up.
 func NewServer(opts *config.Opts, db backend.DB) *Server {
 	s := &Server{
 		conf:     opts,
