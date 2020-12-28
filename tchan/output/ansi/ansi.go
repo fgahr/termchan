@@ -63,10 +63,23 @@ func NewWriter(r *http.Request, w http.ResponseWriter, ts TemplateSet) *Writer {
 }
 
 func formatBoard(board tchan.BoardConfig) string {
-	// FIXME: lookup styles by name
-	return fmt.Sprintf(
-		"/<span class=%q>%s</span>/ - <span class=%q>%s</span>",
-		board.HighlightStyle, board.Name, board.HighlightStyle, board.Description)
+	styles := map[string]string{
+		"black":   "\u001b[30m",
+		"red":     "\u001b[31m",
+		"green":   "\u001b[32m",
+		"yellow":  "\u001b[33m",
+		"blue":    "\u001b[34m",
+		"magenta": "\u001b[35m",
+		"cyan":    "\u001b[36m",
+		"white":   "\u001b[37m",
+	}
+
+	if style, ok := styles[board.HighlightStyle]; ok {
+		return fmt.Sprintf(
+			"/%s%s\u001b[0m/ - %s%s\u001b[0m",
+			style, board.Name, style, board.Description)
+	}
+	return fmt.Sprintf("/%s/ - %s", board.Name, board.Description)
 }
 
 func (w *Writer) WriteWelcome(boards []tchan.BoardConfig) error {
