@@ -49,7 +49,7 @@ const DefaultWelcome string = "{{ .FgGreen }}::::::::::::.,:::::: :::::::..   . 
 	"      --data-urlencode \"topic=Candlejack\" \\\n" +
 	"      --data-urlencode \"content=I'm not afraid of him, what's he gon-\\\n" +
 	"{{ .Separator.Single }}\n" +
-	"({{ .FgBlue }}*{{ .End }}) fields other than content are optional, thread/board has to exist.\n" +
+	"({{ .FgBlue }}*{{ .End }}) fields other than content are optional, board/thread has to exist.\n" +
 	"{{ .Separator.Double }}\n" +
 	"{{ .FgGreen }}HAVE{{ .End }} {{ .FgBlue }}FUN{{ .End }}!\n"
 

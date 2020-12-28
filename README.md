@@ -72,7 +72,7 @@ Post (i.e. create) a thread (*)
       --data-urlencode "topic=Candlejack" \
       --data-urlencode "content=I'm not afraid of him, what's he gon-"
 --------------------------------------------------------------------------------
-(*) fields other than content are optional, thread/board has to exist
+(*) fields other than content are optional, board/thread has to exist
 ================================================================================
 HAVE FUN!
 ```
