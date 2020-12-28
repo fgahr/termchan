@@ -12,6 +12,7 @@ import (
 
 // Opts deals with all variable and optional aspects of termchan.
 type Opts struct {
+	WriteTemplates   bool
 	Port             int
 	WorkingDirectory string
 	Boards           []tchan.BoardConfig

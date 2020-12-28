@@ -16,6 +16,7 @@ func run() error {
 
 	var err error
 
+	flag.BoolVar(&conf.WriteTemplates, "t", false, "when given, create templates to adjust appearance")
 	flag.StringVar(&conf.WorkingDirectory, "d", "./", "the base (configuration) directory for the service")
 	flag.IntVar(&conf.Port, "p", 8088, "the port for the server to listen on")
 	flag.Parse()

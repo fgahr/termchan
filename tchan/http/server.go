@@ -47,6 +47,13 @@ func NewServer(conf *config.Opts) (*Server, error) {
 		return nil, err
 	}
 
+	if conf.WriteTemplates {
+		log.Println("write templates")
+		if err := output.WriteTemplates(conf.WorkingDirectory); err != nil {
+			return nil, errors.Wrap(err, "creating templates failed")
+		}
+	}
+
 	return s, nil
 }
 

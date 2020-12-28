@@ -86,10 +86,10 @@ func parseTemplateFile(name string, dir string) (*template.Template, error) {
 	return tmpl, nil
 }
 
-func (t *TemplateSet) Read(wd string) error {
+func (t *TemplateSet) Read(baseDir string) error {
 	// reset to defaults, then look for alternatives
 	t.UseDefaults()
-	tdir := filepath.Join(wd, "template")
+	tdir := filepath.Join(baseDir, "template")
 	if exists, err := util.DirExists(tdir); err != nil {
 		return errors.Wrapf(err, "unable to check out template directory %s", tdir)
 	} else if !exists {
