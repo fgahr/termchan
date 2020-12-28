@@ -2,19 +2,18 @@ package http
 
 import (
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/gorilla/mux"
-	"github.com/pkg/errors"
-
 	"github.com/fgahr/termchan/tchan"
 	"github.com/fgahr/termchan/tchan/config"
-	"github.com/fgahr/termchan/tchan/log"
 	"github.com/fgahr/termchan/tchan/output"
+	"github.com/gorilla/mux"
+	"github.com/pkg/errors"
 )
 
 type requestWorker struct {
@@ -62,7 +61,7 @@ func (rw *requestWorker) readParams() {
 	case "POST":
 		body, err := ioutil.ReadAll(rw.r.Body)
 		if err != nil {
-			log.Error(err)
+			log.Println(err)
 			rw.err = errors.New("unable to read request body")
 			// TODO: Check which HTTP status is appropriate
 			rw.respondError(http.StatusPreconditionFailed)
@@ -71,7 +70,7 @@ func (rw *requestWorker) readParams() {
 		rw.params, rw.err = url.ParseQuery(string(body))
 	default:
 		rw.err = errors.Errorf("illegal request method: %s", rw.r.Method)
-		log.Error(rw.err)
+		log.Println(rw.err)
 		rw.respondError(http.StatusBadRequest)
 	}
 }
@@ -105,7 +104,7 @@ func (rw *requestWorker) try(f func() error, failStatus int, errorText string, h
 
 	err := f()
 	if err != nil {
-		log.Error(err)
+		log.Println(err)
 		if errorText != "" {
 			err = errors.New(errorText)
 		}
@@ -154,12 +153,12 @@ func (rw *requestWorker) getTopic() string {
 
 func (rw *requestWorker) respondWelcome() {
 	rw.try(func() error { return rw.w.WriteWelcome(rw.conf.Boards) },
-		http.StatusInternalServerError, "", log.Error)
+		http.StatusInternalServerError, "", func(err error) { log.Println(err) })
 }
 
 func (rw *requestWorker) respondThread(thr tchan.Thread) {
 	rw.try(func() error { return rw.w.WriteThread(thr) },
-		http.StatusInternalServerError, "", log.Error)
+		http.StatusInternalServerError, "", func(err error) { log.Println(err) })
 }
 
 func (rw *requestWorker) respondNoSuchThread() {
@@ -173,7 +172,7 @@ func (rw *requestWorker) respondNoSuchThread() {
 
 func (rw *requestWorker) respondBoard(b tchan.BoardOverview) {
 	rw.try(func() error { return rw.w.WriteBoard(b) },
-		http.StatusInternalServerError, "", log.Error)
+		http.StatusInternalServerError, "", func(err error) { log.Println(err) })
 }
 
 func (rw *requestWorker) respondNoSuchBoard() {
