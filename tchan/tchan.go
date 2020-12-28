@@ -29,10 +29,12 @@ type Thread struct {
 	Posts []Post      `json:"posts"`
 }
 
+// ID returns the thread's associated ID, i.e. the OP's post ID.
 func (t Thread) ID() int64 {
 	return t.Posts[0].ID
 }
 
+// NumReplies returns the number of replies this thread has received.
 func (t Thread) NumReplies() int {
 	return len(t.Posts) - 1
 }
@@ -45,6 +47,7 @@ type ThreadSummary struct {
 	Active     time.Time `json:"active"`
 }
 
+// ID returns the thread's associated ID, i.e. the OP's post ID.
 func (t ThreadSummary) ID() int64 {
 	return t.OP.ID
 }
