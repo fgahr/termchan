@@ -1,10 +1,12 @@
 package ansi
 
 import (
+	"bytes"
 	"fmt"
 	"net/http"
 	"path/filepath"
 	"text/template"
+	"time"
 
 	"github.com/fgahr/termchan/tchan"
 	"github.com/fgahr/termchan/tchan/output"
@@ -16,6 +18,7 @@ type TemplateSet struct {
 	post    *template.Template
 	board   *template.Template
 	thread  *template.Template
+	error   *template.Template
 }
 
 func placeholders() template.FuncMap {
@@ -46,6 +49,10 @@ func (t *TemplateSet) UseDefaults() {
 		template.New("thread.template").
 			Funcs(placeholders()).
 			Parse(output.DefaultThread))
+	t.error = template.Must(
+		template.New("error.template").
+			Funcs(placeholders()).
+			Parse(output.DefaultError))
 }
 
 func (t *TemplateSet) Read(wd string) error {
@@ -100,45 +107,140 @@ func (w *Writer) WriteWelcome(boards []tchan.BoardConfig) error {
 
 	return w.temp.welcome.
 		Funcs(template.FuncMap{
-			"formatBoard": func(b tchan.BoardConfig) string {
-				return w.formatBoard(b)
-			}}).
+			"formatBoard": w.boardFormatter(),
+		}).
 		Execute(w.out, payload)
 }
 
 func (w *Writer) WriteThread(thread tchan.Thread) error {
-	// TODO
-	return nil
+	payload := struct {
+		Defaults     // embedded
+		tchan.Thread // embedded
+	}{
+		Defaults: defaults,
+		Thread:   thread,
+	}
+	return w.temp.thread.
+		Funcs(template.FuncMap{
+			"formatPost":  w.postFormatter(thread.Board.Style),
+			"formatBoard": w.boardFormatter(),
+			"highlight":   w.highlighter(thread.Board.Style),
+			"timeANSIC":   w.timeFormatter(time.ANSIC),
+		}).
+		Execute(w.out, payload)
 }
 
 func (w *Writer) WriteBoard(board tchan.BoardOverview) error {
-	// TODO
-	return nil
+	payload := struct {
+		Defaults            // embedded
+		tchan.BoardOverview // embedded
+	}{
+		Defaults:      defaults,
+		BoardOverview: board,
+	}
+
+	return w.temp.board.
+		Funcs(template.FuncMap{
+			"formatPost":  w.postFormatter(board.Style),
+			"formatBoard": w.boardFormatter(),
+			"highlight":   w.highlighter(board.Style),
+			"timeANSIC":   w.timeFormatter(time.ANSIC),
+		}).
+		Execute(w.out, payload)
 }
 
 func (w *Writer) WriteError(status int, err error) error {
-	// TODO
-	return nil
+	w.out.WriteHeader(status)
+	payload := struct {
+		Defaults // embedded
+		Status   int
+		Error    string
+	}{
+		Defaults: defaults,
+		Status:   status,
+		Error:    err.Error(),
+	}
+
+	return w.temp.error.
+		Funcs(template.FuncMap{
+			"timeANSIC": w.timeFormatter(time.ANSIC),
+			"highlight": w.highlighter("red"),
+		}).
+		Execute(w.out, payload)
+}
+
+func (w *Writer) postFormatter(styleName string) func(tchan.Post) string {
+	return func(p tchan.Post) string {
+		payload := struct {
+			Defaults   // embedded
+			tchan.Post // embedded
+		}{
+			Defaults: defaults,
+			Post:     p,
+		}
+		buf := bytes.Buffer{}
+		err := w.temp.post.Funcs(template.FuncMap{
+			"highlight": w.highlighter(styleName),
+		}).Execute(&buf, payload)
+		if err != nil {
+			return ""
+		}
+		return buf.String()
+	}
+}
+
+func (w *Writer) boardFormatter() func(tchan.BoardConfig) string {
+	return func(b tchan.BoardConfig) string {
+		return w.formatBoard(b)
+	}
+}
+
+func (w *Writer) highlighter(styleName string) func(string) string {
+	return func(s string) string {
+		if sty, ok := w.style(styleName); ok {
+			return fmt.Sprintf("%s%s\u001b[0m", sty, s)
+		}
+		return s
+	}
+}
+
+func (w *Writer) timeFormatter(format string) func(time.Time) string {
+	return func(t time.Time) string {
+		return t.Format(format)
+	}
 }
 
 func (w *Writer) formatBoard(board tchan.BoardConfig) string {
-	styles := map[string]string{
-		"black":   "\u001b[30m",
-		"red":     "\u001b[31m",
-		"green":   "\u001b[32m",
-		"yellow":  "\u001b[33m",
-		"blue":    "\u001b[34m",
-		"magenta": "\u001b[35m",
-		"cyan":    "\u001b[36m",
-		"white":   "\u001b[37m",
-	}
-
-	if style, ok := styles[board.Style]; ok {
+	if style, ok := w.style(board.Style); ok {
 		return fmt.Sprintf(
 			"/%s%s\u001b[0m/ - %s%s\u001b[0m",
 			style, board.Name, style, board.Descr)
 	}
+	// TODO: log warning?
 	return fmt.Sprintf("/%s/ - %s", board.Name, board.Descr)
+}
+
+func (w *Writer) style(name string) (string, bool) {
+	switch name {
+	case "black":
+		return "\u001b[30m", true
+	case "red":
+		return "\u001b[31m", true
+	case "green":
+		return "\u001b[32m", true
+	case "yellow":
+		return "\u001b[33m", true
+	case "blue":
+		return "\u001b[34m", true
+	case "magenta":
+		return "\u001b[35m", true
+	case "cyan":
+		return "\u001b[36m", true
+	case "white":
+		return "\u001b[37m", true
+	default:
+		return "\u001b[37m", false
+	}
 }
 
 type Defaults struct {

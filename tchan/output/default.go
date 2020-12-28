@@ -66,11 +66,14 @@ const DefaultThread = `/{{ .Board.Name | highlight }}/{{ .ID }} {{ .Topic }}
 `
 
 const DefaultBoard = `/{{ .Name | highlight }}/ - {{ .Descr | highlight }}
-{{ with $dsep := .Separator.Double }}{{ with $ssep := .Separator.Single }}{{ $dsep }}
+{{ $dsep := .Separator.Double }}{{ $ssep := .Separator.Single }}{{ $dsep }}
 {{ range .Threads }}
 /{{ .Board.Name | highlight }}/{{ .ID }} {{ .Topic }} ({{ .NumReplies }} {{ if eq 1 .NumReplies }}reply{{ else }}replies{{ end }}) updated {{ .Active | timeANSIC }}
 {{ $ssep }}
 {{ .OP | formatPost }}
 {{ $dsep }}
-{{ end }}{{ end }}{{ end }}
+{{ end }}{{ $n := len .Threads }}{{ $n }} {{ if eq $n 1 }}thread{{ else }}threads{{ end }}
+`
+
+const DefaultError = `{{ .Status }} {{ .FgRed }}ERROR{{ .End }}: {{ .Error }}
 `
