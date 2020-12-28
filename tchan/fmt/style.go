@@ -1,6 +1,8 @@
 package fmt
 
-import "fmt"
+import (
+	"fmt"
+)
 
 // Style handles formatting of a piece of output.
 type Style interface {
@@ -44,14 +46,14 @@ func (sty style) FormatHTML(s string) string {
 }
 
 var (
-	fgBlack   = style{"black", 30, "#000000"}
-	fgRed     = style{"red", 31, "#ff0000"}
-	fgGreen   = style{"green", 32, "#00ff00"}
-	fgYellow  = style{"yellow", 33, "#ffff00"}
-	fgBlue    = style{"blue", 34, "#0000ff"}
-	fgMagenta = style{"magenta", 35, "#ff00ff"}
-	fgCyan    = style{"cyan", 36, "#00ffff"}
-	fgWhite   = style{"white", 37, "#ffffff"}
+	FgBlack   = style{"black", 30, "#000000"}
+	FgRed     = style{"red", 31, "#ff0000"}
+	FgGreen   = style{"green", 32, "#00ff00"}
+	FgYellow  = style{"yellow", 33, "#ffff00"}
+	FgBlue    = style{"blue", 34, "#0000ff"}
+	FgMagenta = style{"magenta", 35, "#ff00ff"}
+	FgCyan    = style{"cyan", 36, "#00ffff"}
+	FgWhite   = style{"white", 37, "#ffffff"}
 )
 
 var allStyles []style = []style{

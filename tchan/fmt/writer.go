@@ -53,11 +53,11 @@ const (
 )
 
 func (w *writer) singleDivider() {
-	w.write(w.apply(fgBlack, singleDiv))
+	w.write(w.apply(FgBlack, singleDiv))
 }
 
 func (w *writer) doubleDivider() {
-	w.write(w.apply(fgBlack, doubleDiv))
+	w.write(w.apply(FgBlack, doubleDiv))
 }
 
 // Created with figlet's cosmic.flf font
@@ -83,10 +83,10 @@ func (w *writer) WriteWelcome(boards []tchan.BoardConfig) error {
 	defer w.pres.footer()
 
 	for _, line := range bannerTerm {
-		w.write(w.apply(fgGreen, line))
+		w.write(w.apply(FgGreen, line))
 	}
 	for _, line := range bannerChan {
-		w.write(w.apply(fgBlue, line))
+		w.write(w.apply(FgBlue, line))
 	}
 	w.write("Welcome!")
 	w.doubleDivider()
@@ -99,7 +99,7 @@ func (w *writer) WriteWelcome(boards []tchan.BoardConfig) error {
 	w.write("How do I use it?")
 	w.singleDivider()
 
-	w.hlStyle = fgGreen
+	w.hlStyle = FgGreen
 	w.write(w.hl("Viewing"))
 	w.singleDivider()
 	w.write("%s a board (e.g. /g/)", w.hl("View"))
@@ -115,7 +115,7 @@ func (w *writer) WriteWelcome(boards []tchan.BoardConfig) error {
 	w.write("  curl -s '%s/d/69?format=json'", w.hostname)
 	w.doubleDivider()
 
-	w.hlStyle = fgBlue
+	w.hlStyle = FgBlue
 	w.write(w.hl("Posting"))
 	w.singleDivider()
 	w.write("%s a reply to a thread (%s)", w.hl("Post"), w.hl("*"))
@@ -133,7 +133,7 @@ func (w *writer) WriteWelcome(boards []tchan.BoardConfig) error {
 	w.write("(%s) fields other than content are optional, board/thread has to exist", w.hl("*"))
 	w.doubleDivider()
 
-	w.write("%s %s!", w.apply(fgGreen, "HAVE"), w.apply(fgBlue, "FUN"))
+	w.write("%s %s!", w.apply(FgGreen, "HAVE"), w.apply(FgBlue, "FUN"))
 
 	return w.err
 }
@@ -219,6 +219,6 @@ func (w *writer) WriteError(err error) error {
 	w.err = w.pres.header()
 	defer w.pres.footer()
 
-	w.write("%s: %s", w.apply(fgRed, "ERROR"), err.Error())
+	w.write("%s: %s", w.apply(FgRed, "ERROR"), err.Error())
 	return w.err
 }

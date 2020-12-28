@@ -9,7 +9,9 @@ import (
 	"github.com/fgahr/termchan/tchan"
 	"github.com/fgahr/termchan/tchan/backend"
 	"github.com/fgahr/termchan/tchan/config"
-	"github.com/fgahr/termchan/tchan/html"
+	"github.com/fgahr/termchan/tchan/output"
+	"github.com/fgahr/termchan/tchan/output/ansi"
+	"github.com/fgahr/termchan/tchan/output/html"
 	"github.com/gorilla/mux"
 )
 
@@ -20,6 +22,7 @@ type Server struct {
 	router   *mux.Router
 	confLock *sync.RWMutex
 	htmlSet  html.TemplateSet
+	ansiSet  ansi.TemplateSet
 }
 
 // New creates a new server with configuration and backend.
@@ -32,6 +35,8 @@ func NewServer(opts *config.Opts, db backend.DB) *Server {
 		confLock: new(sync.RWMutex),
 	}
 	s.routes()
+	s.htmlSet.UseDefaults()
+	s.ansiSet.UseDefaults()
 	return s
 }
 
@@ -67,14 +72,14 @@ func (s *Server) confReader(f http.HandlerFunc) http.HandlerFunc {
 
 func (s *Server) handleWelcome() http.HandlerFunc {
 	return s.confReader(func(w http.ResponseWriter, r *http.Request) {
-		rw := newRequestWorker(w, r, s.conf)
+		rw := s.newRequestWorker(w, r)
 		rw.respondWelcome()
 	})
 }
 
 func (s *Server) handleViewBoard() http.HandlerFunc {
 	return s.confReader(func(w http.ResponseWriter, r *http.Request) {
-		rw := newRequestWorker(w, r, s.conf)
+		rw := s.newRequestWorker(w, r)
 
 		boardConf, ok := s.conf.BoardConfig(rw.board)
 		if !ok {
@@ -97,7 +102,7 @@ func (s *Server) handleViewBoard() http.HandlerFunc {
 
 func (s *Server) handleViewThread() http.HandlerFunc {
 	return s.confReader(func(w http.ResponseWriter, r *http.Request) {
-		rw := newRequestWorker(w, r, s.conf)
+		rw := s.newRequestWorker(w, r)
 
 		boardConf, ok := s.conf.BoardConfig(rw.board)
 		if !ok {
@@ -119,7 +124,7 @@ func (s *Server) handleViewThread() http.HandlerFunc {
 
 func (s *Server) handleCreateThread() http.HandlerFunc {
 	return s.confReader(func(w http.ResponseWriter, r *http.Request) {
-		rw := newRequestWorker(w, r, s.conf)
+		rw := s.newRequestWorker(w, r)
 
 		rw.extractPost()
 		topic := rw.getTopic()
@@ -142,7 +147,7 @@ func (s *Server) handleCreateThread() http.HandlerFunc {
 
 func (s *Server) handleReplyToThread() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		rw := newRequestWorker(w, r, s.conf)
+		rw := s.newRequestWorker(w, r)
 
 		boardConf, ok := s.conf.BoardConfig(rw.board)
 		if !ok {
@@ -167,4 +172,8 @@ func (s *Server) handleReplyToThread() http.HandlerFunc {
 			rw.respondNoSuchThread()
 		}
 	}
+}
+
+func (s *Server) writer(r *http.Request, w http.ResponseWriter) output.Writer {
+	return ansi.NewWriter(r, w, s.ansiSet)
 }

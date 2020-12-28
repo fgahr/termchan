@@ -14,7 +14,7 @@ Welcome!
 {{ .Separator.Double }}
 Boards
 {{ range .Boards }}
-{{ . | formatBoard }}
+  {{ . | formatBoard }}
 {{ end }}
 {{ .Separator.Single }}
 How do I use it?

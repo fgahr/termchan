@@ -8,19 +8,19 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fgahr/termchan/tchan"
-	"github.com/fgahr/termchan/tchan/config"
-	"github.com/fgahr/termchan/tchan/fmt"
-	"github.com/fgahr/termchan/tchan/log"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
+
+	"github.com/fgahr/termchan/tchan"
+	"github.com/fgahr/termchan/tchan/config"
+	"github.com/fgahr/termchan/tchan/log"
+	"github.com/fgahr/termchan/tchan/output"
 )
 
 type requestWorker struct {
-	w       http.ResponseWriter
-	r       *http.Request
 	conf    *config.Opts
-	f       fmt.Writer
+	w       output.Writer
+	r       *http.Request
 	params  url.Values
 	board   string
 	replyID int64
@@ -28,15 +28,14 @@ type requestWorker struct {
 	err     error
 }
 
-func newRequestWorker(w http.ResponseWriter, r *http.Request, opts *config.Opts) *requestWorker {
-	rw := requestWorker{w: w, r: r, conf: opts}
+func (s *Server) newRequestWorker(w http.ResponseWriter, r *http.Request) *requestWorker {
+	rw := requestWorker{conf: s.conf, w: s.writer(r, w), r: r}
 	rw.init()
 	return &rw
 }
 
 func (rw *requestWorker) init() {
 	rw.readParams()
-	rw.setUpWriter()
 	rw.determineBoardAndPost()
 }
 
@@ -63,14 +62,6 @@ func (rw *requestWorker) readParams() {
 		log.Error(rw.err)
 		rw.respondError(http.StatusBadRequest)
 	}
-}
-
-func (rw *requestWorker) setUpWriter() {
-	if rw.err != nil {
-		return
-	}
-
-	rw.f = fmt.GetWriter(rw.params, rw.r, rw.w)
 }
 
 func (rw *requestWorker) determineBoardAndPost() {
@@ -150,12 +141,12 @@ func (rw *requestWorker) getTopic() string {
 }
 
 func (rw *requestWorker) respondWelcome() {
-	rw.try(func() error { return rw.f.WriteWelcome(rw.conf.Boards) },
+	rw.try(func() error { return rw.w.WriteWelcome(rw.conf.Boards) },
 		http.StatusInternalServerError, "", log.Error)
 }
 
 func (rw *requestWorker) respondThread(thr tchan.Thread) {
-	rw.try(func() error { return rw.f.WriteThread(thr) },
+	rw.try(func() error { return rw.w.WriteThread(thr) },
 		http.StatusInternalServerError, "", log.Error)
 }
 
@@ -169,7 +160,7 @@ func (rw *requestWorker) respondNoSuchThread() {
 }
 
 func (rw *requestWorker) respondBoard(b tchan.BoardOverview) {
-	rw.try(func() error { return rw.f.WriteBoard(b) },
+	rw.try(func() error { return rw.w.WriteBoard(b) },
 		http.StatusInternalServerError, "", log.Error)
 }
 
@@ -182,7 +173,6 @@ func (rw *requestWorker) respondNoSuchBoard() {
 	rw.respondError(http.StatusNotFound)
 }
 
-func (rw *requestWorker) respondError(statusCode int) {
-	rw.w.WriteHeader(statusCode)
-	rw.f.WriteError(rw.err)
+func (rw *requestWorker) respondError(status int) {
+	rw.w.WriteError(status, rw.err)
 }
