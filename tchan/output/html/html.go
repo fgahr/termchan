@@ -81,7 +81,7 @@ func (w *Writer) withHeaderAndFooter(f func() error) error {
 func formatBoard(board tchan.BoardConfig) template.HTML {
 	return template.HTML(fmt.Sprintf(
 		"/<span class=%q>%s</span>/ - <span class=%q>%s</span>",
-		board.HighlightStyle, board.Name, board.HighlightStyle, board.Description))
+		board.Style, board.Name, board.Style, board.Descr))
 }
 
 func (w *Writer) WriteWelcome(boards []tchan.BoardConfig) error {

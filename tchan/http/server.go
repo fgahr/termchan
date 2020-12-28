@@ -87,7 +87,7 @@ func (s *Server) handleViewBoard() http.HandlerFunc {
 		}
 
 		ok = false
-		board := tchan.BoardOverview{MetaData: boardConf}
+		board := tchan.BoardOverview{BoardConfig: boardConf}
 		rw.try(func() error {
 			return s.db.PopulateBoard(rw.board, &board, &ok)
 		}, http.StatusInternalServerError, "failed to fetch board")

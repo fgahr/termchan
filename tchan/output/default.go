@@ -17,9 +17,7 @@ const DefaultWelcome string = "{{ .FgGreen }}::::::::::::.,:::::: :::::::..   . 
 	"Welcome!\n" +
 	"{{ .Separator.Double }}\n" +
 	"Boards\n" +
-	"{{ range .Boards }}\n" +
-	"  {{ . | formatBoard }}\n" +
-	"{{ end }}\n" +
+	"{{ range .Boards }}  {{ . | formatBoard }}\n{{ end }}" +
 	"{{ .Separator.Single }}\n" +
 	"How do I use it?\n" +
 	"{{ .Separator.Double }}\n" +
@@ -53,3 +51,26 @@ const DefaultWelcome string = "{{ .FgGreen }}::::::::::::.,:::::: :::::::..   . 
 	"({{ .FgBlue }}*{{ .End }}) fields other than content are optional, thread/board has to exist.\n" +
 	"{{ .Separator.Double }}\n" +
 	"{{ .FgGreen }}HAVE{{ .End }} {{ .FgBlue }}FUN{{ .End }}!\n"
+
+const DefaultPost = `[{{ .ID }}] {{ .Author }} wrote at {{ .Timestamp | timeANSIC }}
+
+{{ .Content }}
+`
+
+const DefaultThread = `/{{ .Board.Name | highlight }}/{{ .ID }} {{ .Topic }}
+{{ .Separator.Double }}
+{{ with $sep := .Separator.Single }}{{ range .Posts }}
+{{ . | formatPost }}
+{{ $sep }}{{ end }}{{ end }}
+{{ .NumReplies }} {{ with $n := len .Posts }}{{ if eq $n 2}}reply{{ else }}replies{{ end }}{{ end }}
+`
+
+const DefaultBoard = `/{{ .Name | highlight }}/ - {{ .Descr | highlight }}
+{{ with $dsep := .Separator.Double }}{{ with $ssep := .Separator.Single }}{{ $dsep }}
+{{ range .Threads }}
+/{{ .Board.Name | highlight }}/{{ .ID }} {{ .Topic }} ({{ .NumReplies }} {{ if eq 1 .NumReplies }}reply{{ else }}replies{{ end }}) updated {{ .Active | timeANSIC }}
+{{ $ssep }}
+{{ .OP | formatPost }}
+{{ $dsep }}
+{{ end }}{{ end }}{{ end }}
+`

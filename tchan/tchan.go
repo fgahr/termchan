@@ -7,8 +7,8 @@ import (
 // BoardConfig contains the configured settings for a board.
 type BoardConfig struct {
 	Name            string `json:"name"`
-	Description     string `json:"description"`
-	HighlightStyle  string `json:"-"`
+	Descr           string `json:"description"`
+	Style           string `json:"-"`
 	MaxThreadCount  int    `json:"maxThreadCount"`
 	MaxThreadLength int    `json:"maxThreadLength"`
 	MaxPostBytes    int    `json:"maxPostBytes"`
@@ -29,8 +29,12 @@ type Thread struct {
 	Posts []Post      `json:"posts"`
 }
 
-// ThreadOverview contains superficial thread data.
-type ThreadOverview struct {
+func (t Thread) ID() int64 {
+	return t.Posts[0].ID
+}
+
+// ThreadSummary contains superficial thread data.
+type ThreadSummary struct {
 	Topic      string    `json:"topic"`
 	OP         Post      `json:"op"`
 	NumReplies int       `json:"numReplies"`
@@ -39,6 +43,6 @@ type ThreadOverview struct {
 
 // BoardOverview contains superficial board data.
 type BoardOverview struct {
-	MetaData BoardConfig      `json:"meta"`
-	Threads  []ThreadOverview `json:"threads"`
+	BoardConfig                 // embedded
+	Threads     []ThreadSummary `json:"threads"`
 }

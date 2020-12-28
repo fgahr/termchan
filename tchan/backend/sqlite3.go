@@ -87,9 +87,9 @@ LIMIT ?;
 	}
 	defer threadRows.Close()
 
-	b.Threads = make([]tchan.ThreadOverview, 0)
+	b.Threads = make([]tchan.ThreadSummary, 0)
 	for threadRows.Next() {
-		t := tchan.ThreadOverview{}
+		t := tchan.ThreadSummary{}
 		var createdTS, activeTS string
 		err = threadRows.Scan(&t.Topic, &t.NumReplies, &createdTS, &activeTS,
 			&t.OP.ID, &t.OP.Author, &t.OP.Content)

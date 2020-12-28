@@ -90,7 +90,7 @@ ORDER BY name ASC;
 
 	for boardRows.Next() {
 		var bc tchan.BoardConfig
-		err = boardRows.Scan(&bc.Name, &bc.Description, &bc.HighlightStyle,
+		err = boardRows.Scan(&bc.Name, &bc.Descr, &bc.Style,
 			&bc.MaxThreadCount, &bc.MaxThreadLength, &bc.MaxPostBytes)
 		if err != nil {
 			return errors.Wrap(err, "failed to read board definition from config file")

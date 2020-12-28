@@ -1,0 +1,6 @@
+/{{ .Board.Name | highlight }}/{{ .ID }} {{ .Topic }}
+{{ .Separator.Double }}
+{{ with $sep := .Separator.Single }}{{ range .Posts }}
+{{ . | formatPost }}
+{{ $sep }}{{ end }}{{ end }}
+{{ .NumReplies }} {{ with $n := len .Posts }}{{ if eq $n 2}}reply{{ else }}replies{{ end }}{{ end }}

@@ -92,8 +92,8 @@ func (w *writer) WriteWelcome(boards []tchan.BoardConfig) error {
 	w.doubleDivider()
 	w.write("Boards")
 	for _, b := range boards {
-		sty := getStyle(b.HighlightStyle)
-		w.write("  /%s/ - %s", w.apply(sty, b.Name), w.apply(sty, b.Description))
+		sty := getStyle(b.Style)
+		w.write("  /%s/ - %s", w.apply(sty, b.Name), w.apply(sty, b.Descr))
 	}
 	w.singleDivider()
 	w.write("How do I use it?")
@@ -154,7 +154,7 @@ func (w *writer) WriteThread(t tchan.Thread) error {
 	w.err = w.pres.header()
 	defer w.pres.footer()
 
-	w.hlStyle = getStyle(t.Board.HighlightStyle)
+	w.hlStyle = getStyle(t.Board.Style)
 
 	w.write("/%s/%d %s", w.hl(t.Board.Name), t.Posts[0].ID, w.hl(t.Topic))
 	w.doubleDivider()
@@ -176,7 +176,7 @@ func (w *writer) WriteThread(t tchan.Thread) error {
 	return w.err
 }
 
-func (w *writer) writeThreadOverview(t tchan.ThreadOverview, bc tchan.BoardConfig) {
+func (w *writer) writeThreadSummary(t tchan.ThreadSummary, bc tchan.BoardConfig) {
 	if w.err != nil {
 		return
 	}
@@ -196,13 +196,13 @@ func (w *writer) WriteBoard(board tchan.BoardOverview) error {
 	w.err = w.pres.header()
 	defer w.pres.footer()
 
-	bc := board.MetaData
-	w.hlStyle = getStyle(bc.HighlightStyle)
-	w.write("/%s/ - %s", w.hl(board.MetaData.Name), w.hl(board.MetaData.Description))
+	bc := board.BoardConfig
+	w.hlStyle = getStyle(bc.Style)
+	w.write("/%s/ - %s", w.hl(board.Name), w.hl(board.Descr))
 
 	for _, thread := range board.Threads {
 		w.doubleDivider()
-		w.writeThreadOverview(thread, bc)
+		w.writeThreadSummary(thread, bc)
 	}
 
 	w.doubleDivider()

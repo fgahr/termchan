@@ -13,18 +13,39 @@ import (
 
 type TemplateSet struct {
 	welcome *template.Template
+	post    *template.Template
 	board   *template.Template
 	thread  *template.Template
 }
 
+func placeholders() template.FuncMap {
+	nothing := func(v interface{}) string { return "" }
+	return template.FuncMap{
+		"formatBoard": nothing,
+		"formatPost":  nothing,
+		"highlight":   nothing,
+		"timeANSIC":   nothing,
+	}
+}
+
 func (t *TemplateSet) UseDefaults() {
+	// Needs to be replaced before template execution
 	t.welcome = template.Must(
 		template.New("welcome.template").
-			Funcs(template.FuncMap{"formatBoard": formatBoard}).
+			Funcs(placeholders()).
 			Parse(output.DefaultWelcome))
-	// TODO
-	t.board = nil
-	t.thread = nil
+	t.post = template.Must(
+		template.New("post.template").
+			Funcs(placeholders()).
+			Parse(output.DefaultPost))
+	t.board = template.Must(
+		template.New("board.template").
+			Funcs(placeholders()).
+			Parse(output.DefaultBoard))
+	t.thread = template.Must(
+		template.New("thread.template").
+			Funcs(placeholders()).
+			Parse(output.DefaultThread))
 }
 
 func (t *TemplateSet) Read(wd string) error {
@@ -32,13 +53,17 @@ func (t *TemplateSet) Read(wd string) error {
 	t.UseDefaults()
 	// FIXME: find error handling concept; folder may not exist etc.
 	tdir := filepath.Join(wd, "template")
-	temp, err := template.ParseGlob(filepath.Join(tdir, "*"))
+	temp, err := template.ParseGlob(filepath.Join(tdir, "*.template"))
 	if err != nil {
 		return errors.Wrapf(err, "failed to read templates in %s", tdir)
 	}
 
 	if welcome := temp.Lookup("welcome.template"); welcome != nil {
 		t.welcome = welcome
+	}
+
+	if post := temp.Lookup("post.template"); post != nil {
+		t.post = post
 	}
 
 	if thread := temp.Lookup("thread.template"); thread != nil {
@@ -62,26 +87,6 @@ func NewWriter(r *http.Request, w http.ResponseWriter, ts TemplateSet) *Writer {
 	return &Writer{req: r, out: w, temp: ts}
 }
 
-func formatBoard(board tchan.BoardConfig) string {
-	styles := map[string]string{
-		"black":   "\u001b[30m",
-		"red":     "\u001b[31m",
-		"green":   "\u001b[32m",
-		"yellow":  "\u001b[33m",
-		"blue":    "\u001b[34m",
-		"magenta": "\u001b[35m",
-		"cyan":    "\u001b[36m",
-		"white":   "\u001b[37m",
-	}
-
-	if style, ok := styles[board.HighlightStyle]; ok {
-		return fmt.Sprintf(
-			"/%s%s\u001b[0m/ - %s%s\u001b[0m",
-			style, board.Name, style, board.Description)
-	}
-	return fmt.Sprintf("/%s/ - %s", board.Name, board.Description)
-}
-
 func (w *Writer) WriteWelcome(boards []tchan.BoardConfig) error {
 	payload := struct {
 		Defaults // embedded
@@ -94,7 +99,10 @@ func (w *Writer) WriteWelcome(boards []tchan.BoardConfig) error {
 	}
 
 	return w.temp.welcome.
-		Funcs(template.FuncMap{"formatBoard": formatBoard}).
+		Funcs(template.FuncMap{
+			"formatBoard": func(b tchan.BoardConfig) string {
+				return w.formatBoard(b)
+			}}).
 		Execute(w.out, payload)
 }
 
@@ -111,6 +119,26 @@ func (w *Writer) WriteBoard(board tchan.BoardOverview) error {
 func (w *Writer) WriteError(status int, err error) error {
 	// TODO
 	return nil
+}
+
+func (w *Writer) formatBoard(board tchan.BoardConfig) string {
+	styles := map[string]string{
+		"black":   "\u001b[30m",
+		"red":     "\u001b[31m",
+		"green":   "\u001b[32m",
+		"yellow":  "\u001b[33m",
+		"blue":    "\u001b[34m",
+		"magenta": "\u001b[35m",
+		"cyan":    "\u001b[36m",
+		"white":   "\u001b[37m",
+	}
+
+	if style, ok := styles[board.Style]; ok {
+		return fmt.Sprintf(
+			"/%s%s\u001b[0m/ - %s%s\u001b[0m",
+			style, board.Name, style, board.Descr)
+	}
+	return fmt.Sprintf("/%s/ - %s", board.Name, board.Descr)
 }
 
 type Defaults struct {
