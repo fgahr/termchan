@@ -27,7 +27,7 @@ type Server struct {
 
 // New creates a new server with configuration and backend.
 // Backend is assumed to be fully set up.
-func NewServer(opts *config.Opts, db backend.DB) *Server {
+func NewServer(opts *config.Opts, db backend.DB) (*Server, error) {
 	s := &Server{
 		conf:     opts,
 		db:       db,
@@ -35,9 +35,11 @@ func NewServer(opts *config.Opts, db backend.DB) *Server {
 		confLock: new(sync.RWMutex),
 	}
 	s.routes()
-	s.htmlSet.UseDefaults()
+	if err := s.htmlSet.Read(s.conf.WorkingDirectory); err != nil {
+		return nil, err
+	}
 	s.ansiSet.UseDefaults()
-	return s
+	return s, nil
 }
 
 func (s *Server) ReloadConfig() error {

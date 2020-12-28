@@ -30,7 +30,11 @@ func run() error {
 		return err
 	}
 
-	srv := http.NewServer(&conf, db)
+	srv, err := http.NewServer(&conf, db)
+	if err != nil {
+		return err
+	}
+
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGHUP)
 	defer close(sigChan)

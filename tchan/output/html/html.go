@@ -5,12 +5,15 @@ import (
 	"fmt"
 	"html"
 	"html/template"
+	"io/ioutil"
 	"net/http"
+	"os"
 	"path/filepath"
 	"time"
 
 	"github.com/fgahr/termchan/tchan"
 	"github.com/fgahr/termchan/tchan/output"
+	"github.com/fgahr/termchan/tchan/util"
 	"github.com/pkg/errors"
 )
 
@@ -56,34 +59,73 @@ func (t *TemplateSet) UseDefaults() {
 			Parse(output.DefaultError))
 }
 
+func parseTemplateFile(name string, dir string) (*template.Template, error) {
+	path := filepath.Join(dir, name)
+	if exists, err := util.FileExists(path); err != nil {
+		return nil, errors.Wrapf(err, "unable to check out template file %s", path)
+	} else if !exists {
+		// Nothing to do here
+		return nil, nil
+	}
+
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, errors.Wrapf(err, "unable to open template file %s", path)
+	}
+	defer f.Close()
+
+	content, err := ioutil.ReadAll(f)
+	if err != nil {
+		return nil, errors.Wrapf(err, "unable to read from template file %s", path)
+	}
+
+	tmpl, err := template.New(name).Funcs(placeholders()).Parse(string(content))
+	if err != nil {
+		return nil, errors.Wrapf(err, "error parsing template file %s", path)
+	}
+
+	return tmpl, nil
+}
+
 func (t *TemplateSet) Read(wd string) error {
 	// reset to defaults, then look for alternatives
 	t.UseDefaults()
-	// FIXME: find error handling concept; folder may not exist etc.
 	tdir := filepath.Join(wd, "template")
-	temp, err := template.ParseGlob(filepath.Join(tdir, "*.template"))
-	if err != nil {
-		return errors.Wrapf(err, "failed to read templates in %s", tdir)
+	if exists, err := util.DirExists(tdir); err != nil {
+		return errors.Wrapf(err, "unable to check out template directory %s", tdir)
+	} else if !exists {
+		// Nothing to do, just use the defaults
+		return nil
 	}
 
-	if welcome := temp.Lookup("welcome.template"); welcome != nil {
-		t.welcome = welcome
+	if tmpl, err := parseTemplateFile("welcome.template", tdir); err != nil {
+		return err
+	} else if tmpl != nil {
+		t.welcome = tmpl
 	}
 
-	if post := temp.Lookup("post.template"); post != nil {
-		t.post = post
+	if tmpl, err := parseTemplateFile("post.template", tdir); err != nil {
+		return err
+	} else if tmpl != nil {
+		t.post = tmpl
 	}
 
-	if thread := temp.Lookup("thread.template"); thread != nil {
-		t.thread = thread
+	if tmpl, err := parseTemplateFile("thread.template", tdir); err != nil {
+		return err
+	} else if tmpl != nil {
+		t.thread = tmpl
 	}
 
-	if board := temp.Lookup("board.template"); board != nil {
-		t.board = board
+	if tmpl, err := parseTemplateFile("board.template", tdir); err != nil {
+		return err
+	} else if tmpl != nil {
+		t.thread = tmpl
 	}
 
-	if error := temp.Lookup("error.template"); error != nil {
-		t.error = error
+	if tmpl, err := parseTemplateFile("error.template", tdir); err != nil {
+		return err
+	} else if tmpl != nil {
+		t.error = tmpl
 	}
 
 	return nil

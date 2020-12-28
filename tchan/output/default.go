@@ -1,6 +1,7 @@
 package output
 
 // FIXME: Can use file embedding in Go 1.16
+
 // Contains backticks so cannot use backtick notation.
 const DefaultWelcome string = "{{ .FgGreen }}::::::::::::.,:::::: :::::::..   .        :     {{ .End }}\n" +
 	"{{ .FgGreen }};;;;;;;;'''';;;;'''' ;;;;``;;;;  ;;,.    ;;;    {{ .End }}\n" +

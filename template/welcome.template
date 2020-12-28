@@ -13,10 +13,8 @@
 Welcome!
 {{ .Separator.Double }}
 Boards
-{{ range .Boards }}
-  {{ . | formatBoard }}
-{{ end }}
-{{ .Separator.Single }}
+{{ range .Boards }} {{ . | formatBoard }}
+{{ end }}{{ .Separator.Single }}
 How do I use it?
 {{ .Separator.Double }}
 {{ .FgGreen }}Viewing{{ .End }}
