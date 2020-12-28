@@ -7,7 +7,6 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/fgahr/termchan/tchan/backend"
 	"github.com/fgahr/termchan/tchan/config"
 	"github.com/fgahr/termchan/tchan/http"
 )
@@ -25,12 +24,7 @@ func run() error {
 		return err
 	}
 
-	db := backend.New(&conf)
-	if err = db.Init(); err != nil {
-		return err
-	}
-
-	srv, err := http.NewServer(&conf, db)
+	srv, err := http.NewServer(&conf)
 	if err != nil {
 		return err
 	}

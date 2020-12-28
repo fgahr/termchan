@@ -13,6 +13,7 @@ import (
 	"github.com/fgahr/termchan/tchan/output/ansi"
 	"github.com/fgahr/termchan/tchan/output/html"
 	"github.com/gorilla/mux"
+	"github.com/pkg/errors"
 )
 
 // Server connects all aspects of the termchan application.
@@ -27,28 +28,45 @@ type Server struct {
 
 // New creates a new server with configuration and backend.
 // Backend is assumed to be fully set up.
-func NewServer(opts *config.Opts, db backend.DB) (*Server, error) {
+func NewServer(conf *config.Opts) (*Server, error) {
+	db := backend.New(conf)
+	if err := db.Init(); err != nil {
+		return nil, errors.Wrap(err, "backend setup failed")
+	}
+
 	s := &Server{
-		conf:     opts,
+		conf:     conf,
 		db:       db,
 		router:   mux.NewRouter(),
 		confLock: new(sync.RWMutex),
 	}
 	s.routes()
-	if err := s.htmlSet.Read(s.conf.WorkingDirectory); err != nil {
+
+	if err := s.ReloadConfig(); err != nil {
 		return nil, err
 	}
-	s.ansiSet.UseDefaults()
+
 	return s, nil
 }
 
+// ReloadConfig forces the server to reload its configuration and templates.
+// New connections are stalled until the process is completed.
 func (s *Server) ReloadConfig() error {
 	s.confLock.Lock()
 	defer s.confLock.Unlock()
 
-	log.Println("reloading configuration")
+	log.Println("loading configuration")
 	if err := s.conf.Read(); err != nil {
 		return err
+	}
+
+	log.Println("reading templates")
+	if err := s.htmlSet.Read(s.conf.WorkingDirectory); err != nil {
+		return errors.Wrap(err, "reading html templates failed")
+	}
+
+	if err := s.ansiSet.Read(s.conf.WorkingDirectory); err != nil {
+		return errors.Wrap(err, "reading ansi templates failed")
 	}
 
 	return s.db.Refresh()

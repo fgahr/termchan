@@ -24,11 +24,11 @@ type sqlite struct {
 func (s *sqlite) Init() error {
 	s.boardsDirectory = filepath.Join(s.conf.WorkingDirectory, "boards")
 	if ok, err := util.DirExists(s.boardsDirectory); err != nil {
-		return err
+		return errors.Wrap(err, "unable to check out board DB directory")
 	} else if !ok {
 		err = os.Mkdir(s.boardsDirectory, 0700)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "directory setup for board DBs failed")
 		}
 	}
 
@@ -36,7 +36,7 @@ func (s *sqlite) Init() error {
 	for _, board := range s.conf.Boards {
 		bdb, err := s.initBoardDB(board.Name)
 		if err != nil {
-			return err
+			return errors.Wrapf(err, "database setup for /%s/ failed", board.Name)
 		}
 		boards[board.Name] = bdb
 	}
