@@ -33,12 +33,20 @@ func (t Thread) ID() int64 {
 	return t.Posts[0].ID
 }
 
+func (t Thread) NumReplies() int {
+	return len(t.Posts) - 1
+}
+
 // ThreadSummary contains superficial thread data.
 type ThreadSummary struct {
 	Topic      string    `json:"topic"`
 	OP         Post      `json:"op"`
 	NumReplies int       `json:"numReplies"`
 	Active     time.Time `json:"active"`
+}
+
+func (t ThreadSummary) ID() int64 {
+	return t.OP.ID
 }
 
 // BoardOverview contains superficial board data.

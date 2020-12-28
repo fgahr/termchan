@@ -175,5 +175,5 @@ func (s *Server) handleReplyToThread() http.HandlerFunc {
 }
 
 func (s *Server) writer(r *http.Request, w http.ResponseWriter) output.Writer {
-	return ansi.NewWriter(r, w, s.ansiSet)
+	return html.NewWriter(r, w, s.htmlSet)
 }

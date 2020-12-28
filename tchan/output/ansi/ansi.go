@@ -81,6 +81,10 @@ func (t *TemplateSet) Read(wd string) error {
 		t.board = board
 	}
 
+	if error := temp.Lookup("error.template"); error != nil {
+		t.error = error
+	}
+
 	return nil
 }
 
@@ -181,6 +185,7 @@ func (w *Writer) postFormatter(styleName string) func(tchan.Post) string {
 		buf := bytes.Buffer{}
 		err := w.temp.post.Funcs(template.FuncMap{
 			"highlight": w.highlighter(styleName),
+			"timeANSIC": w.timeFormatter(time.ANSIC),
 		}).Execute(&buf, payload)
 		if err != nil {
 			return ""

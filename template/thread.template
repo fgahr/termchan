@@ -1,6 +1,5 @@
 /{{ .Board.Name | highlight }}/{{ .ID }} {{ .Topic }}
-{{ .Separator.Double }}
-{{ $ssep := .Separator.Single }}{{ range .Posts }}
-{{ . | formatPost }}
-{{ $ssep }}{{ end }}{{ end }}
-{{ .NumReplies }} {{ with $n := len .Posts }}{{ if eq $n 2}}reply{{ else }}replies{{ end }}{{ end }}
+{{ $ssep := .Separator.Single }}{{ $n := len .Posts }}{{ .Separator.Double }}
+{{ range .Posts }}{{ . | formatPost }}
+{{ $ssep }}
+{{ end }}{{ .NumReplies }} {{ if eq $n 2}}reply{{ else }}replies{{ end }}

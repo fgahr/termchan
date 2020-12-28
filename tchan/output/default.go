@@ -58,17 +58,16 @@ const DefaultPost = `[{{ .ID }}] {{ .Author }} wrote at {{ .Timestamp | timeANSI
 `
 
 const DefaultThread = `/{{ .Board.Name | highlight }}/{{ .ID }} {{ .Topic }}
-{{ .Separator.Double }}
-{{ with $sep := .Separator.Single }}{{ range .Posts }}
-{{ . | formatPost }}
-{{ $sep }}{{ end }}{{ end }}
-{{ .NumReplies }} {{ with $n := len .Posts }}{{ if eq $n 2}}reply{{ else }}replies{{ end }}{{ end }}
+{{ $ssep := .Separator.Single }}{{ $n := len .Posts }}{{ .Separator.Double }}
+{{ range .Posts }}{{ . | formatPost }}
+{{ $ssep }}
+{{ end }}{{ .NumReplies }} {{ if eq $n 2}}reply{{ else }}replies{{ end }}
 `
 
 const DefaultBoard = `/{{ .Name | highlight }}/ - {{ .Descr | highlight }}
-{{ $dsep := .Separator.Double }}{{ $ssep := .Separator.Single }}{{ $dsep }}
+{{ $dsep := .Separator.Double }}{{ $ssep := .Separator.Single }}{{ $board := .Name }}{{ $dsep }}
 {{ range .Threads }}
-/{{ .Board.Name | highlight }}/{{ .ID }} {{ .Topic }} ({{ .NumReplies }} {{ if eq 1 .NumReplies }}reply{{ else }}replies{{ end }}) updated {{ .Active | timeANSIC }}
+/{{ $board | highlight }}/{{ .ID }} {{ .Topic }} ({{ .NumReplies }} {{ if eq 1 .NumReplies }}reply{{ else }}replies{{ end }}) updated {{ .Active | timeANSIC }}
 {{ $ssep }}
 {{ .OP | formatPost }}
 {{ $dsep }}
