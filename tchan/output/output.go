@@ -32,6 +32,8 @@ func writeTemplate(tdir string, fname string, content []byte) error {
 	return nil
 }
 
+// WriteTemplates dumps the default templates to a directory `template` inside
+// the given base directory.
 func WriteTemplates(baseDir string) error {
 	tdir := filepath.Join(baseDir, "template")
 	if exists, err := util.DirExists(tdir); err != nil {

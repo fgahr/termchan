@@ -1,15 +1,15 @@
-{{ .FgGreen }}::::::::::::.,:::::: :::::::..   .        :     {{ .End }}
-{{ .FgGreen }};;;;;;;;'''';;;;'''' ;;;;``;;;;  ;;,.    ;;;    {{ .End }}
-{{ .FgGreen }}     [[      [[cccc   [[[,/[[['  [[[[, ,[[[[,   {{ .End }}
-{{ .FgGreen }}     $$      $$""""   $$$$$$c    $$$$$$$$"$$$   {{ .End }}
-{{ .FgGreen }}     88,     888oo,__ 888b "88bo,888 Y88" 888o  {{ .End }}
-{{ .FgGreen }}     MMM     """"YUMMMMMMM   "W" MMM  M'  "MMM  {{ .End }}
-{{ .FgBlue }}                                    .,-:::::   ::   .:   :::.   :::.    :::. {{ .End }}
-{{ .FgBlue }}                                  ,;;;'````'  ,;;   ;;,  ;;`;;  `;;;;,  `;;; {{ .End }}
-{{ .FgBlue }}                                  [[[        ,[[[,,,[[[ ,[[ '[[,  [[[[[. '[[ {{ .End }}
-{{ .FgBlue }}                                  $$$        "$$$"""$$$c$$$cc$$$c $$$ "Y$c$$ {{ .End }}
-{{ .FgBlue }}                                  `88bo,__,o, 888   "88o888   888,888    Y88 {{ .End }}
-{{ .FgBlue }}                                    "YUMMMMMP"MMM    YMMYMM   ""` MMM     YM {{ .End }}
+{{ .FgGreen }}  ::::::::::::.,:::::: :::::::..   .        :     {{ .End }}
+{{ .FgGreen }}  ;;;;;;;;'''';;;;'''' ;;;;``;;;;  ;;,.    ;;;    {{ .End }}
+{{ .FgGreen }}       [[      [[cccc   [[[,/[[['  [[[[, ,[[[[,   {{ .End }}
+{{ .FgGreen }}       $$      $$""""   $$$$$$c    $$$$$$$$"$$$   {{ .End }}
+{{ .FgGreen }}       88,     888oo,__ 888b "88bo,888 Y88" 888o  {{ .End }}
+{{ .FgGreen }}       MMM     """"YUMMMMMMM   "W" MMM  M'  "MMM  {{ .End }}
+{{ .FgBlue }}                                      .,-:::::   ::   .:   :::.   :::.    :::. {{ .End }}
+{{ .FgBlue }}                                    ,;;;'````'  ,;;   ;;,  ;;`;;  `;;;;,  `;;; {{ .End }}
+{{ .FgBlue }}                                    [[[        ,[[[,,,[[[ ,[[ '[[,  [[[[[. '[[ {{ .End }}
+{{ .FgBlue }}                                    $$$        "$$$"""$$$c$$$cc$$$c $$$ "Y$c$$ {{ .End }}
+{{ .FgBlue }}                                    `88bo,__,o, 888   "88o888   888,888    Y88 {{ .End }}
+{{ .FgBlue }}                                      "YUMMMMMP"MMM    YMMYMM   ""` MMM     YM {{ .End }}
 Welcome!
 {{ .Separator.Double }}
 Boards
