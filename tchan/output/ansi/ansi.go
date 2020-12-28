@@ -118,7 +118,7 @@ func (t *TemplateSet) Read(wd string) error {
 	if tmpl, err := parseTemplateFile("board.template", tdir); err != nil {
 		return err
 	} else if tmpl != nil {
-		t.thread = tmpl
+		t.board = tmpl
 	}
 
 	if tmpl, err := parseTemplateFile("error.template", tdir); err != nil {

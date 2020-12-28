@@ -12,6 +12,7 @@ import (
 	"github.com/fgahr/termchan/tchan/output"
 	"github.com/fgahr/termchan/tchan/output/ansi"
 	"github.com/fgahr/termchan/tchan/output/html"
+	"github.com/fgahr/termchan/tchan/output/json"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 )
@@ -194,6 +195,14 @@ func (s *Server) handleReplyToThread() http.HandlerFunc {
 	}
 }
 
-func (s *Server) writer(r *http.Request, w http.ResponseWriter) output.Writer {
+func (s *Server) jsonWriter(r *http.Request, w http.ResponseWriter) output.Writer {
+	return json.NewWriter(r, w)
+}
+
+func (s *Server) ansiWriter(r *http.Request, w http.ResponseWriter) output.Writer {
+	return ansi.NewWriter(r, w, s.ansiSet)
+}
+
+func (s *Server) htmlWriter(r *http.Request, w http.ResponseWriter) output.Writer {
 	return html.NewWriter(r, w, s.htmlSet)
 }

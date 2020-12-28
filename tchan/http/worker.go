@@ -29,8 +29,20 @@ type requestWorker struct {
 }
 
 func (s *Server) newRequestWorker(w http.ResponseWriter, r *http.Request) *requestWorker {
-	rw := requestWorker{conf: s.conf, w: s.writer(r, w), r: r}
+	// Use ANSI as default for possible error messages up to this point.
+	rw := requestWorker{conf: s.conf, w: s.ansiWriter(r, w), r: r}
 	rw.init()
+	switch rw.params.Get("format") {
+	case "ansi":
+		rw.w = s.ansiWriter(r, w)
+	case "html":
+		rw.w = s.htmlWriter(r, w)
+	case "json":
+		rw.w = s.jsonWriter(r, w)
+	default:
+		rw.w = s.ansiWriter(r, w)
+	}
+
 	return &rw
 }
 

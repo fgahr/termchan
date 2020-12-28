@@ -2,39 +2,41 @@ package json
 
 import (
 	"encoding/json"
-	"io"
+	"net/http"
 
 	"github.com/fgahr/termchan/tchan"
 )
 
-type jsonWriter struct {
+type Writer struct {
+	res http.ResponseWriter
 	enc *json.Encoder
 }
 
-func newJSONWriter(w io.Writer) interface{} {
-	return jsonWriter{json.NewEncoder(w)}
+func NewWriter(r *http.Request, w http.ResponseWriter) *Writer {
+	return &Writer{res: w, enc: json.NewEncoder(w)}
 }
 
-func (w jsonWriter) write(obj interface{}) error {
+func (w *Writer) write(obj interface{}) error {
 	return w.enc.Encode(obj)
 }
 
-func (w jsonWriter) WriteWelcome(boards []tchan.BoardConfig) error {
+func (w *Writer) WriteWelcome(boards []tchan.BoardConfig) error {
 	return w.write(boards)
 }
 
-func (w jsonWriter) WriteThread(thread tchan.Thread) error {
+func (w *Writer) WriteThread(thread tchan.Thread) error {
 	return w.write(thread)
 }
 
-func (w jsonWriter) WriteBoard(board tchan.BoardOverview) error {
+func (w *Writer) WriteBoard(board tchan.BoardOverview) error {
 	return w.write(board)
 }
 
-func (w jsonWriter) WriteError(status int, err error) error {
+func (w *Writer) WriteError(status int, err error) error {
 	wrapper := struct {
 		Status int    `json:"status"`
 		Error  string `json:"error"`
 	}{Status: status, Error: err.Error()}
+	w.res.WriteHeader(status)
 	return w.write(wrapper)
 }

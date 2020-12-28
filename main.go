@@ -20,10 +20,6 @@ func run() error {
 	flag.IntVar(&conf.Port, "p", 8088, "the port for the server to listen on")
 	flag.Parse()
 
-	if err = conf.Read(); err != nil {
-		return err
-	}
-
 	srv, err := http.NewServer(&conf)
 	if err != nil {
 		return err
