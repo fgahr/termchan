@@ -63,8 +63,7 @@ func (rw *requestWorker) readParams() {
 		if err != nil {
 			log.Println(err)
 			rw.err = errors.New("unable to read request body")
-			// TODO: Check which HTTP status is appropriate
-			rw.respondError(http.StatusPreconditionFailed)
+			rw.respondError(http.StatusInternalServerError)
 			return
 		}
 		rw.params, rw.err = url.ParseQuery(string(body))

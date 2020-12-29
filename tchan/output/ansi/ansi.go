@@ -263,7 +263,6 @@ func (w *Writer) formatBoard(board tchan.BoardConfig) string {
 			"/%s%s\u001b[0m/ - %s%s\u001b[0m",
 			style, board.Name, style, board.Descr)
 	}
-	// TODO: log warning?
 	return fmt.Sprintf("/%s/ - %s", board.Name, board.Descr)
 }
 
