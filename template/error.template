@@ -1,0 +1,1 @@
+{{ .Status }} {{ .FgRed }}ERROR{{ .End }}: {{ .Error }}

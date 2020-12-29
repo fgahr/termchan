@@ -1,0 +1,8 @@
+/{{ .Name | highlight }}/ - {{ .Descr | highlight }}
+{{ $dsep := .Separator.Double }}{{ $ssep := .Separator.Single }}{{ $board := .Name }}{{ $dsep }}
+{{ range .Threads }}
+/{{ $board | highlight }}/{{ .ID }} {{ .Topic }} ({{ .NumReplies }} {{ if eq 1 .NumReplies }}reply{{ else }}replies{{ end }}) updated {{ .Active | timeANSIC }}
+{{ $ssep }}
+{{ .OP | formatPost }}
+{{ $dsep }}
+{{ end }}{{ $n := len .Threads }}{{ $n }} {{ if eq $n 1 }}thread{{ else }}threads{{ end }}

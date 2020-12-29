@@ -24,11 +24,11 @@ type sqlite struct {
 func (s *sqlite) Init() error {
 	s.boardsDirectory = filepath.Join(s.conf.WorkingDirectory, "boards")
 	if ok, err := util.DirExists(s.boardsDirectory); err != nil {
-		return err
+		return errors.Wrap(err, "unable to check out board DB directory")
 	} else if !ok {
 		err = os.Mkdir(s.boardsDirectory, 0700)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "directory setup for board DBs failed")
 		}
 	}
 
@@ -36,7 +36,7 @@ func (s *sqlite) Init() error {
 	for _, board := range s.conf.Boards {
 		bdb, err := s.initBoardDB(board.Name)
 		if err != nil {
-			return err
+			return errors.Wrapf(err, "database setup for /%s/ failed", board.Name)
 		}
 		boards[board.Name] = bdb
 	}
@@ -87,9 +87,9 @@ LIMIT ?;
 	}
 	defer threadRows.Close()
 
-	b.Threads = make([]tchan.ThreadOverview, 0)
+	b.Threads = make([]tchan.ThreadSummary, 0)
 	for threadRows.Next() {
-		t := tchan.ThreadOverview{}
+		t := tchan.ThreadSummary{}
 		var createdTS, activeTS string
 		err = threadRows.Scan(&t.Topic, &t.NumReplies, &createdTS, &activeTS,
 			&t.OP.ID, &t.OP.Author, &t.OP.Content)
@@ -115,8 +115,8 @@ LIMIT ?;
 	return nil
 }
 
-func getThreadID(db *sql.DB, postID int64) (int, bool, error) {
-	threadID := -1
+func getThreadID(db *sql.DB, postID int64) (int64, bool, error) {
+	var threadID int64
 	result, err := db.Query(`
 SELECT thread_id FROM post WHERE id = ?;
 `, postID)
@@ -135,7 +135,7 @@ SELECT thread_id FROM post WHERE id = ?;
 	return threadID, true, nil
 }
 
-func getTopic(db *sql.DB, threadID int) (string, error) {
+func getTopic(db *sql.DB, threadID int64) (string, error) {
 	topic := ""
 	result, err := db.Query(`
 SELECT topic FROM thread WHERE id = ?;
@@ -145,12 +145,12 @@ SELECT topic FROM thread WHERE id = ?;
 	}
 	defer result.Close()
 	if !result.Next() {
-		return topic, errors.Errorf("no thread table entry for thread %s", threadID)
+		return topic, errors.Errorf("no thread table entry for thread %d", threadID)
 	}
 
 	err = result.Scan(&topic)
 	if err != nil {
-		return topic, errors.Errorf("invalid topic for thread %s", threadID)
+		return topic, errors.Errorf("invalid topic for thread %d", threadID)
 	}
 
 	return topic, nil

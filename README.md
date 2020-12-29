@@ -8,7 +8,7 @@ A simple text board, powered by Golang's stdlib http server and sqlite.
 
 Making sure you have the go tool installed and set up, just do
 
-```
+```sh
 go get -u github.com/fgahr/termchan
 ```
 
@@ -20,7 +20,7 @@ When accessing `/` without any parameters, you will be greeted with a banner and
 usage information. An example of HTML output for the banner is
 [here](welcome.html).
 
-```
+```sh
 $ curl -s 'localhost:8088/'
   ::::::::::::.,:::::: :::::::..   .        :
   ;;;;;;;;'''';;;;'''' ;;;;``;;;;  ;;,.    ;;;
@@ -72,37 +72,45 @@ Post (i.e. create) a thread (*)
       --data-urlencode "topic=Candlejack" \
       --data-urlencode "content=I'm not afraid of him, what's he gon-"
 --------------------------------------------------------------------------------
-(*) fields other than content are optional
---------------------------------------------------------------------------------
+(*) fields other than content are optional, board/thread has to exist
+================================================================================
 HAVE FUN!
 ```
 
 ## Setup
 
-```
+```sh
 termchan -h
 Usage of termchan:
   -d string
     	the base (configuration) directory for the service (default "./")
   -p int
     	the port for the server to listen on (default 8088)
+  -t  when given, create templates to adjust appearance
 ```
+
 The server will read or create a `config.db` config file and a `boards`
-directory to store the database files for the individual boards.
+directory to store the database files for the individual boards. When the `-t`
+option is given, a `template/` directory will be created with default templates.
+See below for [configuration](#config).
 
 You can add new boards to the `config.db` file with the sqlite3 command and
-```
+
+```sh
 INSERT INTO board (name, description, style)
 VALUES ('a', 'a board', 'red');
 ```
+
 Defining a style is optional but recommended. Recognized style names are, as
 of writing, `none`, `black`, `red`, `green`, `yellow`, `blue`, `magenta`,
 `cyan`, and `white`.
 
 After changing the board list, restart the server or send a SIGHUP signal, e.g.
-```
+
+```sh
 kill -s HUP $(pgrep termchan)
 ```
+
 to make it reload its config.
 
 ## Usage
@@ -116,7 +124,7 @@ common operations without needing to interact with `curl` directly.
 
 Assuming the server is listening on port 8088 and has a board `/b/`, post with
 
-```
+```sh
 $ curl -s 'localhost:8088/b'  \
       --data-urlencode "name=me" \
       --data-urlencode "content=This is my first post"
@@ -132,7 +140,7 @@ This is my first post
 You will be greeted with a JSON view of the newly created thread. You can get an
 overview of the board with
 
-```
+```sh
 $ curl -s 'localhost:8088/b?format=json' | jq
 {
   "name": "b",
@@ -153,6 +161,20 @@ $ curl -s 'localhost:8088/b?format=json' | jq
   ]
 }
 ```
+
+<a name="config">
+
+# Configuration
+
+The appearance of termchan can be changed via [templates](https://golang.org/pkg/text/template/). These are part of Go's
+standard library. To support both terminal and html output, both `text/template`
+and `html/template` are used. The packages `tchan/output/ansi` and
+`tchan/output/html` are mostly mirrored and either one is suitable to learn
+about available fields and functions from within the template.
+
+When a template is missing, its default is used (embedded in the source). To
+use a new or edited template, restart termchan or send a `SIGHUP` signal to a
+running process.
 
 # TODOs
 

@@ -1,6 +1,7 @@
-package server
+package http
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"sync"
@@ -8,7 +9,12 @@ import (
 	"github.com/fgahr/termchan/tchan"
 	"github.com/fgahr/termchan/tchan/backend"
 	"github.com/fgahr/termchan/tchan/config"
+	"github.com/fgahr/termchan/tchan/output"
+	"github.com/fgahr/termchan/tchan/output/ansi"
+	"github.com/fgahr/termchan/tchan/output/html"
+	"github.com/fgahr/termchan/tchan/output/json"
 	"github.com/gorilla/mux"
+	"github.com/pkg/errors"
 )
 
 // Server connects all aspects of the termchan application.
@@ -17,36 +23,71 @@ type Server struct {
 	db       backend.DB
 	router   *mux.Router
 	confLock *sync.RWMutex
+	htmlSet  html.TemplateSet
+	ansiSet  ansi.TemplateSet
 }
 
-// New creates a new server without configuration or backend.
-// In order to be usable these still need to be set up.
-func New(opts *config.Opts, db backend.DB) *Server {
+// New creates a new server with configuration and backend.
+// Backend is assumed to be fully set up.
+func NewServer(conf *config.Opts) (*Server, error) {
+	db := backend.New(conf)
+	if err := db.Init(); err != nil {
+		return nil, errors.Wrap(err, "backend setup failed")
+	}
+
 	s := &Server{
-		conf:     opts,
+		conf:     conf,
 		db:       db,
 		router:   mux.NewRouter(),
 		confLock: new(sync.RWMutex),
 	}
 	s.routes()
-	return s
+
+	if err := s.ReloadConfig(); err != nil {
+		return nil, err
+	}
+
+	if conf.WriteTemplates {
+		log.Println("write templates")
+		if err := output.WriteTemplates(conf.WorkingDirectory); err != nil {
+			return nil, errors.Wrap(err, "creating templates failed")
+		}
+	}
+
+	return s, nil
 }
 
+// ReloadConfig forces the server to reload its configuration and templates.
+// New connections are stalled until the process is completed.
 func (s *Server) ReloadConfig() error {
 	s.confLock.Lock()
 	defer s.confLock.Unlock()
 
-	log.Println("reloading configuration")
+	log.Println("loading configuration")
 	if err := s.conf.Read(); err != nil {
 		return err
+	}
+
+	log.Println("reading templates")
+	if err := s.htmlSet.Read(s.conf.WorkingDirectory); err != nil {
+		return errors.Wrap(err, "reading html templates failed")
+	}
+
+	if err := s.ansiSet.Read(s.conf.WorkingDirectory); err != nil {
+		return errors.Wrap(err, "reading ansi templates failed")
 	}
 
 	return s.db.Refresh()
 }
 
 // ServeHTTP handles HTTP requests.
-func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	s.router.ServeHTTP(w, r)
+func (s *Server) ServeHTTP() error {
+	log.Printf("serving HTTP on port %d", s.conf.Port)
+	return http.ListenAndServe(s.portString(), s.router)
+}
+
+func (s *Server) portString() string {
+	return fmt.Sprintf(":%d", s.conf.Port)
 }
 
 func (s *Server) confReader(f http.HandlerFunc) http.HandlerFunc {
@@ -59,14 +100,14 @@ func (s *Server) confReader(f http.HandlerFunc) http.HandlerFunc {
 
 func (s *Server) handleWelcome() http.HandlerFunc {
 	return s.confReader(func(w http.ResponseWriter, r *http.Request) {
-		rw := newRequestWorker(w, r, s.conf)
+		rw := s.newRequestWorker(w, r)
 		rw.respondWelcome()
 	})
 }
 
 func (s *Server) handleViewBoard() http.HandlerFunc {
 	return s.confReader(func(w http.ResponseWriter, r *http.Request) {
-		rw := newRequestWorker(w, r, s.conf)
+		rw := s.newRequestWorker(w, r)
 
 		boardConf, ok := s.conf.BoardConfig(rw.board)
 		if !ok {
@@ -74,7 +115,7 @@ func (s *Server) handleViewBoard() http.HandlerFunc {
 		}
 
 		ok = false
-		board := tchan.BoardOverview{MetaData: boardConf}
+		board := tchan.BoardOverview{BoardConfig: boardConf}
 		rw.try(func() error {
 			return s.db.PopulateBoard(rw.board, &board, &ok)
 		}, http.StatusInternalServerError, "failed to fetch board")
@@ -89,7 +130,7 @@ func (s *Server) handleViewBoard() http.HandlerFunc {
 
 func (s *Server) handleViewThread() http.HandlerFunc {
 	return s.confReader(func(w http.ResponseWriter, r *http.Request) {
-		rw := newRequestWorker(w, r, s.conf)
+		rw := s.newRequestWorker(w, r)
 
 		boardConf, ok := s.conf.BoardConfig(rw.board)
 		if !ok {
@@ -111,7 +152,7 @@ func (s *Server) handleViewThread() http.HandlerFunc {
 
 func (s *Server) handleCreateThread() http.HandlerFunc {
 	return s.confReader(func(w http.ResponseWriter, r *http.Request) {
-		rw := newRequestWorker(w, r, s.conf)
+		rw := s.newRequestWorker(w, r)
 
 		rw.extractPost()
 		topic := rw.getTopic()
@@ -134,7 +175,7 @@ func (s *Server) handleCreateThread() http.HandlerFunc {
 
 func (s *Server) handleReplyToThread() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		rw := newRequestWorker(w, r, s.conf)
+		rw := s.newRequestWorker(w, r)
 
 		boardConf, ok := s.conf.BoardConfig(rw.board)
 		if !ok {
@@ -159,4 +200,16 @@ func (s *Server) handleReplyToThread() http.HandlerFunc {
 			rw.respondNoSuchThread()
 		}
 	}
+}
+
+func (s *Server) jsonWriter(r *http.Request, w http.ResponseWriter) output.Writer {
+	return json.NewWriter(r, w)
+}
+
+func (s *Server) ansiWriter(r *http.Request, w http.ResponseWriter) output.Writer {
+	return ansi.NewWriter(r, w, s.ansiSet)
+}
+
+func (s *Server) htmlWriter(r *http.Request, w http.ResponseWriter) output.Writer {
+	return html.NewWriter(r, w, s.htmlSet)
 }
