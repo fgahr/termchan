@@ -1,7 +1,8 @@
 package main
 
 import (
-	"flag"
+	"fmt"
+	"io"
 	"log"
 	"os"
 	"os/signal"
@@ -9,18 +10,47 @@ import (
 
 	"github.com/fgahr/termchan/tchan/config"
 	"github.com/fgahr/termchan/tchan/http"
+	"github.com/fgahr/termchan/tchan/output"
+	"github.com/pkg/errors"
 )
 
-func run() error {
-	var conf config.Opts
+type command func(conf config.Settings, cmd string, args ...string) error
 
-	var err error
+var commands map[string]command = map[string]command{
+	"dump-config":      dumpConfig,
+	"create-templates": createTemplates,
+	"serve-http":       serveHTTP,
+}
 
-	flag.BoolVar(&conf.WriteTemplates, "t", false, "when given, create templates to adjust appearance")
-	flag.StringVar(&conf.WorkingDirectory, "d", "./", "the base (configuration) directory for the service")
-	flag.IntVar(&conf.Port, "p", 8088, "the port for the server to listen on")
-	flag.Parse()
+func usage(out io.Writer) {
+	// NOTE: usage() can not be in the commands slice due to cyclic
+	// dependencies during initialization.
+	fmt.Fprintf(out, "usage: %s [-d dir] <command>\n", os.Args[0])
+	fmt.Fprint(out, `
+flags:
+  -d <dir>            the directory from which to run, defaults to the current directory
 
+commands:
+  dump-config         write the current configuration to stdout; can be used to populate a default config
+  create-templates    place the default templates; will not overwrite existing files
+  serve-http          run as an http service
+
+`)
+}
+
+func dumpConfig(conf config.Settings, cmd string, args ...string) error {
+	return conf.WriteJSON(os.Stdout)
+}
+
+func createTemplates(conf config.Settings, cmd string, args ...string) error {
+	log.Println("write templates")
+	if err := output.WriteTemplates(conf.TemplateDirectory()); err != nil {
+		return errors.Wrapf(err, "%s: creating templates failed", cmd)
+	}
+	return nil
+}
+
+func serveHTTP(conf config.Settings, cmd string, args ...string) error {
 	srv, err := http.NewServer(&conf)
 	if err != nil {
 		return err
@@ -41,6 +71,48 @@ func run() error {
 	}()
 
 	return srv.ServeHTTP()
+}
+
+func run() error {
+	args := os.Args[1:]
+	if len(args) == 0 {
+		usage(os.Stderr)
+		return errors.New("argument required")
+	}
+
+	conf := config.Defaults()
+
+	// NOTE: could use the flag package here but right now it wouldn't add much.
+	switch arg := args[0]; arg {
+	case "-h", "--help", "help":
+		usage(os.Stdout)
+		return nil
+	case "-d":
+		if len(args) < 2 {
+			usage(os.Stderr)
+			return errors.New("-d: directory argument required")
+		}
+		if err := conf.SetWorkingDirectory(args[1]); err != nil {
+			return errors.Wrapf(err, "cannot use working directory %s", args[1])
+		}
+		args = args[2:]
+	}
+
+	if len(args) < 1 {
+		usage(os.Stderr)
+		return errors.New("command required")
+	}
+
+	if err := conf.ReadFromFile(); err != nil {
+		return errors.Wrap(err, "failed to read initial configuration")
+	}
+
+	cmd := args[0]
+	if f, ok := commands[cmd]; ok {
+		return f(conf, cmd, args[1:]...)
+	}
+	usage(os.Stderr)
+	return errors.Errorf("no such command: %s", cmd)
 }
 
 func main() {

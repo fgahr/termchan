@@ -1,120 +1,119 @@
 package config
 
 import (
-	"database/sql"
+	"bytes"
+	"encoding/json"
+	"io"
 	"os"
 	"path/filepath"
+	"regexp"
 	"sort"
 
 	"github.com/fgahr/termchan/tchan"
+	"github.com/fgahr/termchan/tchan/util"
 	"github.com/pkg/errors"
 )
 
-// Opts deals with all variable and optional aspects of termchan.
-type Opts struct {
-	WriteTemplates   bool
-	Port             int
-	WorkingDirectory string
-	Boards           []tchan.BoardConfig
+// Settings deals with all variable and optional aspects of termchan.
+type Settings struct {
+	Port   int
+	wd     string        `json:"-"`
+	Boards []tchan.Board `json:"boards"`
 }
 
-// New creates a new configuration object.
-func New(workingDirectory string) *Opts {
-	return &Opts{
-		WorkingDirectory: workingDirectory,
-		Boards:           nil,
+// Defaults gives a default configuration for termchan.
+func Defaults() Settings {
+	return Settings{
+		Port: 8088,
+		wd:   "./",
+		Boards: []tchan.Board{
+			{
+				Name:  "e",
+				Descr: "example",
+				Style: "red",
+			},
+		},
 	}
 }
 
-func (c *Opts) connectDB() (*sql.DB, error) {
-	var err error
-
-	dbFile := filepath.Join(c.WorkingDirectory, "config.db")
-	if _, err = os.Stat(dbFile); os.IsNotExist(err) {
-		var f *os.File
-		f, err = os.Create(dbFile)
-		f.Close()
+// SetWorkingDirectory sets the working directory for termchan. Should only
+// be called before initialization.
+func (s *Settings) SetWorkingDirectory(dir string) error {
+	if exists, err := util.DirExists(dir); err != nil {
+		return errors.Wrapf(err, "failed to examine directory %s", dir)
+	} else if !exists {
+		return errors.Errorf("directory %s does not exist", dir)
 	}
-
-	if err != nil {
-		return nil, errors.Wrapf(err, "unable to locate or create database file: %s", dbFile)
-	}
-
-	db, err := sql.Open("sqlite3", dbFile)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to open sqlite file: %s", dbFile)
-	}
-
-	return db, nil
+	s.wd = dir
+	return nil
 }
 
-func (c *Opts) initDB(db *sql.DB) error {
-	var err error
-
-	_, err = db.Exec(`
-CREATE TABLE IF NOT EXISTS board (
-id INTEGER PRIMARY KEY,
-name TEXT NOT NULL ON CONFLICT FAIL UNIQUE ON CONFLICT FAIL,
-description TEXT NOT NULL,
-style TEXT NOT NULL DEFAULT 'none',
-max_threads INTEGER NOT NULL DEFAULT 50,
-max_posts INTEGER NOT NULL DEFAULT 100,
-max_post_bytes INTEGER NOT NULL DEFAULT 4096
-);
-`)
-
-	return errors.Wrap(err, "unable to create board configuration table")
+// TemplateDirectory returns the directory from where to read templates.
+func (s *Settings) TemplateDirectory() string {
+	return filepath.Join(s.wd, "template")
 }
 
-func (c *Opts) Read() error {
-	db, err := c.connectDB()
-	if err != nil {
-		return errors.Wrap(err, "unable to open config file")
-	}
-	defer db.Close()
+// BoardsDirectory returns the directory where board databases are stored.
+func (s *Settings) BoardsDirectory() string {
+	return filepath.Join(s.wd, "boards")
+}
 
-	if err = c.initDB(db); err != nil {
+// ReadJSON reads settings from a JSON-encoded source.
+func (s *Settings) ReadJSON(in io.Reader) error {
+	buf := bytes.Buffer{}
+	if _, err := io.Copy(&buf, in); err != nil {
 		return err
 	}
 
-	boards := make([]tchan.BoardConfig, 0)
+	if empty, _ := regexp.Match("^\\s*$", buf.Bytes()); empty {
+		return nil
+	}
 
-	boardRows, err := db.Query(`
-SELECT name, description, style, max_threads, max_posts, max_post_bytes
-FROM board
-ORDER BY name ASC;
-`)
+	dec := json.NewDecoder(&buf)
+	dec.DisallowUnknownFields()
+	return dec.Decode(s)
+}
+
+// WriteJSON writes settings as JSON to a writer.
+func (s *Settings) WriteJSON(out io.Writer) error {
+	enc := json.NewEncoder(out)
+	enc.SetIndent("", "\t")
+	return enc.Encode(s)
+}
+
+// ReadFromFile attempts to read a configuration file within the working
+// directory.
+func (s *Settings) ReadFromFile() error {
+	cf := filepath.Join(s.wd, "config.json")
+	if exists, err := util.FileExists(cf); err != nil {
+		return errors.Wrapf(err, "error looking for config file %s", cf)
+	} else if !exists {
+		return nil
+	}
+
+	f, err := os.Open(cf)
 	if err != nil {
-		return errors.Wrap(err, "failed to fetch board list from config file")
+		return errors.Wrapf(err, "error opening config file %s", cf)
 	}
-	defer boardRows.Close()
+	defer f.Close()
 
-	for boardRows.Next() {
-		var bc tchan.BoardConfig
-		err = boardRows.Scan(&bc.Name, &bc.Descr, &bc.Style,
-			&bc.MaxThreadCount, &bc.MaxThreadLength, &bc.MaxPostBytes)
-		if err != nil {
-			return errors.Wrap(err, "failed to read board definition from config file")
-		}
-		boards = append(boards, bc)
+	if err := s.ReadJSON(f); err != nil {
+		return errors.Wrapf(err, "error reading config from %s", cf)
 	}
-
-	// Only accept the new board list of it was read without errors.
-	c.Boards = boards
 
 	return nil
 }
 
 // BoardConfig returns the configuration for a board.
-func (c *Opts) BoardConfig(boardName string) (tchan.BoardConfig, bool) {
-	n := len(c.Boards)
+func (s *Settings) BoardConfig(boardName string) (tchan.Board, bool) {
+	n := len(s.Boards)
 	idx := sort.Search(n, func(i int) bool {
-		return c.Boards[i].Name >= boardName
+		return s.Boards[i].Name >= boardName
 	})
 
-	if idx == len(c.Boards) {
-		return tchan.BoardConfig{}, false
+	if idx == len(s.Boards) {
+		return tchan.Board{}, false
 	}
-	b := c.Boards[idx]
-	return c.Boards[idx], b.Name == boardName
+	b := s.Boards[idx]
+	return s.Boards[idx], b.Name == boardName
 }

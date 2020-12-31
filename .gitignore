@@ -3,3 +3,5 @@ termchan
 # sample dbs and query collections for development
 *.db
 *.sql
+# config files for testing
+*.json

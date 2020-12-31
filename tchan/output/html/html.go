@@ -35,6 +35,7 @@ func placeholders() template.FuncMap {
 	}
 }
 
+// UseDefaults resets the template set to its defaults.
 func (t *TemplateSet) UseDefaults() {
 	// Needs to be replaced before template execution
 	t.welcome = template.Must(
@@ -87,42 +88,43 @@ func parseTemplateFile(name string, dir string) (*template.Template, error) {
 	return tmpl, nil
 }
 
-func (t *TemplateSet) Read(baseDir string) error {
-	// reset to defaults, then look for alternatives
+// Read attempts to read recognized templates from within the given directory.
+// Missing template files will be substituted with the defaults.
+func (t *TemplateSet) Read(dir string) error {
+	// Reset to defaults, then look for alternatives
 	t.UseDefaults()
-	tdir := filepath.Join(baseDir, "template")
-	if exists, err := util.DirExists(tdir); err != nil {
-		return errors.Wrapf(err, "unable to check out template directory %s", tdir)
+	if exists, err := util.DirExists(dir); err != nil {
+		return errors.Wrapf(err, "unable to check out template directory %s", dir)
 	} else if !exists {
 		// Nothing to do, just use the defaults
 		return nil
 	}
 
-	if tmpl, err := parseTemplateFile("welcome.template", tdir); err != nil {
+	if tmpl, err := parseTemplateFile("welcome.template", dir); err != nil {
 		return err
 	} else if tmpl != nil {
 		t.welcome = tmpl
 	}
 
-	if tmpl, err := parseTemplateFile("post.template", tdir); err != nil {
+	if tmpl, err := parseTemplateFile("post.template", dir); err != nil {
 		return err
 	} else if tmpl != nil {
 		t.post = tmpl
 	}
 
-	if tmpl, err := parseTemplateFile("thread.template", tdir); err != nil {
+	if tmpl, err := parseTemplateFile("thread.template", dir); err != nil {
 		return err
 	} else if tmpl != nil {
 		t.thread = tmpl
 	}
 
-	if tmpl, err := parseTemplateFile("board.template", tdir); err != nil {
+	if tmpl, err := parseTemplateFile("board.template", dir); err != nil {
 		return err
 	} else if tmpl != nil {
 		t.board = tmpl
 	}
 
-	if tmpl, err := parseTemplateFile("error.template", tdir); err != nil {
+	if tmpl, err := parseTemplateFile("error.template", dir); err != nil {
 		return err
 	} else if tmpl != nil {
 		t.error = tmpl
@@ -157,17 +159,17 @@ func (w *Writer) withHeaderAndFooter(f func() error) error {
 	return nil
 }
 
-func formatBoard(board tchan.BoardConfig) template.HTML {
+func formatBoard(board tchan.Board) template.HTML {
 	return template.HTML(fmt.Sprintf(
 		"/<span class=%q>%s</span>/ - <span class=%q>%s</span>",
 		board.Style, board.Name, board.Style, board.Descr))
 }
 
-func (w *Writer) WriteWelcome(boards []tchan.BoardConfig) error {
+func (w *Writer) WriteWelcome(boards []tchan.Board) error {
 	return w.withHeaderAndFooter(func() error {
 		payload := struct {
 			Defaults // embedded
-			Boards   []tchan.BoardConfig
+			Boards   []tchan.Board
 			Hostname string
 		}{
 			Defaults: defaults,
@@ -266,8 +268,8 @@ func (w *Writer) postFormatter(styleName string) func(tchan.Post) template.HTML 
 	}
 }
 
-func (w *Writer) boardFormatter() func(tchan.BoardConfig) template.HTML {
-	return func(b tchan.BoardConfig) template.HTML {
+func (w *Writer) boardFormatter() func(tchan.Board) template.HTML {
+	return func(b tchan.Board) template.HTML {
 		return w.formatBoard(b)
 	}
 }
@@ -284,7 +286,7 @@ func (w *Writer) timeFormatter(format string) func(time.Time) template.HTML {
 	}
 }
 
-func (w *Writer) formatBoard(board tchan.BoardConfig) template.HTML {
+func (w *Writer) formatBoard(board tchan.Board) template.HTML {
 	return template.HTML(fmt.Sprintf(
 		"/<span class=%q>%s</span>/ - <span class=%q>%s</span>",
 		board.Style, board.Name, board.Style, board.Descr))

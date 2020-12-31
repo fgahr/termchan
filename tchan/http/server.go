@@ -19,7 +19,7 @@ import (
 
 // Server connects all aspects of the termchan application.
 type Server struct {
-	conf     *config.Opts
+	conf     *config.Settings
 	db       backend.DB
 	router   *mux.Router
 	confLock *sync.RWMutex
@@ -29,7 +29,7 @@ type Server struct {
 
 // New creates a new server with configuration and backend.
 // Backend is assumed to be fully set up.
-func NewServer(conf *config.Opts) (*Server, error) {
+func NewServer(conf *config.Settings) (*Server, error) {
 	db := backend.New(conf)
 	if err := db.Init(); err != nil {
 		return nil, errors.Wrap(err, "backend setup failed")
@@ -47,13 +47,6 @@ func NewServer(conf *config.Opts) (*Server, error) {
 		return nil, err
 	}
 
-	if conf.WriteTemplates {
-		log.Println("write templates")
-		if err := output.WriteTemplates(conf.WorkingDirectory); err != nil {
-			return nil, errors.Wrap(err, "creating templates failed")
-		}
-	}
-
 	return s, nil
 }
 
@@ -64,16 +57,16 @@ func (s *Server) ReloadConfig() error {
 	defer s.confLock.Unlock()
 
 	log.Println("loading configuration")
-	if err := s.conf.Read(); err != nil {
+	if err := s.conf.ReadFromFile(); err != nil {
 		return err
 	}
 
 	log.Println("reading templates")
-	if err := s.htmlSet.Read(s.conf.WorkingDirectory); err != nil {
+	if err := s.htmlSet.Read(s.conf.TemplateDirectory()); err != nil {
 		return errors.Wrap(err, "reading html templates failed")
 	}
 
-	if err := s.ansiSet.Read(s.conf.WorkingDirectory); err != nil {
+	if err := s.ansiSet.Read(s.conf.TemplateDirectory()); err != nil {
 		return errors.Wrap(err, "reading ansi templates failed")
 	}
 
@@ -115,7 +108,7 @@ func (s *Server) handleViewBoard() http.HandlerFunc {
 		}
 
 		ok = false
-		board := tchan.BoardOverview{BoardConfig: boardConf}
+		board := tchan.BoardOverview{Board: boardConf}
 		rw.try(func() error {
 			return s.db.PopulateBoard(rw.board, &board, &ok)
 		}, http.StatusInternalServerError, "failed to fetch board")

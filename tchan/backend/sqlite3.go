@@ -3,7 +3,6 @@ package backend
 import (
 	"database/sql"
 	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/fgahr/termchan/tchan"
@@ -16,13 +15,13 @@ import (
 )
 
 type sqlite struct {
-	conf            *config.Opts
+	conf            *config.Settings
 	boardsDirectory string
 	boardDBs        map[string]*sql.DB
 }
 
 func (s *sqlite) Init() error {
-	s.boardsDirectory = filepath.Join(s.conf.WorkingDirectory, "boards")
+	s.boardsDirectory = s.conf.BoardsDirectory()
 	if ok, err := util.DirExists(s.boardsDirectory); err != nil {
 		return errors.Wrap(err, "unable to check out board DB directory")
 	} else if !ok {
@@ -81,7 +80,7 @@ FROM thread t INNER JOIN post op ON t.op_id = op.id
 AND t.num_replies > -1 AND t.num_replies <= ?
 ORDER BY t.active_at DESC
 LIMIT ?;
-`, bconf.MaxThreadLength, bconf.MaxThreadCount)
+`, bconf.MaxThreadLength(), bconf.MaxThreads())
 	if err != nil {
 		return errors.Wrap(err, "failed to gather thread summaries")
 	}

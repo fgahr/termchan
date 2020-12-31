@@ -12,7 +12,7 @@ import (
 
 // Writer describes an entity in charge of writing a server response.
 type Writer interface {
-	WriteWelcome(boards []tchan.BoardConfig) error
+	WriteWelcome(boards []tchan.Board) error
 	WriteThread(thread tchan.Thread) error
 	WriteBoard(board tchan.BoardOverview) error
 	WriteError(status int, err error) error
@@ -32,35 +32,33 @@ func writeTemplate(tdir string, fname string, content []byte) error {
 	return nil
 }
 
-// WriteTemplates dumps the default templates to a directory `template` inside
-// the given base directory.
-func WriteTemplates(baseDir string) error {
-	tdir := filepath.Join(baseDir, "template")
-	if exists, err := util.DirExists(tdir); err != nil {
-		return errors.Wrapf(err, "unable to check out template directory %s", tdir)
+// WriteTemplates dumps the default templates inside the given directory.
+func WriteTemplates(dir string) error {
+	if exists, err := util.DirExists(dir); err != nil {
+		return errors.Wrapf(err, "unable to check out template directory %s", dir)
 	} else if !exists {
-		if err := os.Mkdir(tdir, 0755); err != nil {
-			return errors.Wrapf(err, "unable to create template directory %s", tdir)
+		if err := os.Mkdir(dir, 0755); err != nil {
+			return errors.Wrapf(err, "unable to create template directory %s", dir)
 		}
 	}
 
-	if err := writeTemplate(tdir, "welcome.template", []byte(DefaultWelcome)); err != nil {
+	if err := writeTemplate(dir, "welcome.template", []byte(DefaultWelcome)); err != nil {
 		return err
 	}
 
-	if err := writeTemplate(tdir, "post.template", []byte(DefaultPost)); err != nil {
+	if err := writeTemplate(dir, "post.template", []byte(DefaultPost)); err != nil {
 		return err
 	}
 
-	if err := writeTemplate(tdir, "thread.template", []byte(DefaultThread)); err != nil {
+	if err := writeTemplate(dir, "thread.template", []byte(DefaultThread)); err != nil {
 		return err
 	}
 
-	if err := writeTemplate(tdir, "board.template", []byte(DefaultBoard)); err != nil {
+	if err := writeTemplate(dir, "board.template", []byte(DefaultBoard)); err != nil {
 		return err
 	}
 
-	if err := writeTemplate(tdir, "error.template", []byte(DefaultError)); err != nil {
+	if err := writeTemplate(dir, "error.template", []byte(DefaultError)); err != nil {
 		return err
 	}
 

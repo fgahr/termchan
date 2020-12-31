@@ -6,10 +6,10 @@ import (
 	"github.com/fgahr/termchan/tchan"
 )
 
-func confWithBoards(boards ...string) Opts {
-	c := Opts{}
+func confWithBoards(boards ...string) Settings {
+	c := Settings{}
 	for _, b := range boards {
-		c.Boards = append(c.Boards, tchan.BoardConfig{Name: b})
+		c.Boards = append(c.Boards, tchan.Board{Name: b})
 	}
 	return c
 }
