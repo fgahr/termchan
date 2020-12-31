@@ -1,9 +1,11 @@
 package http
 
 import (
-	"fmt"
+	"context"
 	"log"
+	"net"
 	"net/http"
+	"os"
 	"sync"
 
 	"github.com/fgahr/termchan/tchan"
@@ -13,6 +15,7 @@ import (
 	"github.com/fgahr/termchan/tchan/output/ansi"
 	"github.com/fgahr/termchan/tchan/output/html"
 	"github.com/fgahr/termchan/tchan/output/json"
+	"github.com/fgahr/termchan/tchan/util"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 )
@@ -20,6 +23,7 @@ import (
 // Server connects all aspects of the termchan application.
 type Server struct {
 	conf     *config.Settings
+	hs       *http.Server
 	db       backend.DB
 	router   *mux.Router
 	confLock *sync.RWMutex
@@ -75,12 +79,40 @@ func (s *Server) ReloadConfig() error {
 
 // ServeHTTP handles HTTP requests.
 func (s *Server) ServeHTTP() error {
-	log.Printf("serving HTTP on port %d", s.conf.Port)
-	return http.ListenAndServe(s.portString(), s.router)
+	t := s.conf.Transport
+	if t.Protocol == config.Unix {
+		if exists, err := util.FileExists(t.Socket); err != nil {
+			return errors.Wrapf(err, "unable to check status of socket file%s", t.Socket)
+		} else if exists {
+			return errors.Errorf("cannot open socket: file %s exists", t.Socket)
+		} else {
+			// Clean it up after we're done
+			defer os.Remove(t.Socket)
+		}
+	}
+
+	listener, err := net.Listen(t.Protocol.String(), t.Socket)
+	if err != nil {
+		return errors.Wrapf(err, "unable to establish listener on %v", t)
+	}
+
+	s.hs = &http.Server{
+		Addr:    t.Socket,
+		Handler: s.router,
+	}
+	log.Printf("serving HTTP on %v", s.conf.Transport)
+	if err := s.hs.Serve(listener); err != nil && err != http.ErrServerClosed {
+		return err
+	}
+	return nil
 }
 
-func (s *Server) portString() string {
-	return fmt.Sprintf(":%d", s.conf.Port)
+// Stop causes the server to stop listening.
+func (s *Server) Stop() error {
+	if s.hs != nil {
+		return s.hs.Shutdown(context.Background())
+	}
+	return errors.New("not listening")
 }
 
 func (s *Server) confReader(f http.HandlerFunc) http.HandlerFunc {

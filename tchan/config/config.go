@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"sort"
+	"strings"
 
 	"github.com/fgahr/termchan/tchan"
 	"github.com/fgahr/termchan/tchan/util"
@@ -16,16 +17,82 @@ import (
 
 // Settings deals with all variable and optional aspects of termchan.
 type Settings struct {
-	Port   int
-	wd     string        `json:"-"`
-	Boards []tchan.Board `json:"boards"`
+	Transport Transport     `json:"transport"`
+	wd        string        `json:"-"`
+	Boards    []tchan.Board `json:"boards"`
+}
+
+type Protocol int
+
+const (
+	TCP Protocol = iota
+	Unix
+)
+
+func (p Protocol) String() string {
+	switch p {
+	case TCP:
+		return "tcp"
+	case Unix:
+		return "unix"
+	default:
+		return ""
+	}
+}
+
+func (p Protocol) MarshalJSON() ([]byte, error) {
+	switch p {
+	case TCP:
+		return json.Marshal("tcp")
+	case Unix:
+		return json.Marshal("unix")
+	default:
+		return nil, errors.Errorf("unknown protocol value: %d", int(p))
+	}
+}
+
+func (p *Protocol) UnmarshalJSON(b []byte) error {
+	var s string
+	if err := json.Unmarshal(b, &s); err != nil {
+		return err
+	}
+
+	switch strings.ToLower(s) {
+	case "tcp":
+		*p = TCP
+	case "unix":
+		*p = Unix
+	default:
+		return errors.Errorf("invalid protocol: %s", s)
+	}
+
+	return nil
+}
+
+type Transport struct {
+	Protocol Protocol
+	Socket   string
+}
+
+func (t Transport) String() string {
+	switch t.Protocol {
+	case TCP:
+		return "tcp" + t.Socket
+	case Unix:
+		return "unix:" + t.Socket
+	default:
+		return "unknown " + t.Socket
+	}
 }
 
 // Defaults gives a default configuration for termchan.
 func Defaults() Settings {
 	return Settings{
-		Port: 8088,
-		wd:   "./",
+		Transport: Transport{
+			Protocol: TCP,
+			Socket:   ":8088",
+		},
+		wd: "./",
 		Boards: []tchan.Board{
 			{
 				Name:  "e",

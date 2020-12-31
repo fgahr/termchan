@@ -57,15 +57,23 @@ func serveHTTP(conf config.Settings, cmd string, args ...string) error {
 	}
 
 	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, syscall.SIGHUP)
+	signal.Notify(sigChan, syscall.SIGHUP, syscall.SIGINT)
 	defer close(sigChan)
 	go func() {
 		for sig := range sigChan {
+			log.Printf("caught signal: %v", sig)
+			var err error
 			switch sig {
 			case syscall.SIGHUP:
-				srv.ReloadConfig()
+				err = srv.ReloadConfig()
+			case syscall.SIGINT:
+				err = srv.Stop()
 			default:
-				log.Printf("Unexpected signal: %v", sig)
+				err = errors.Errorf("Unexpected signal: %v", sig)
+			}
+			if err != nil {
+				log.Println(err)
+				err = nil
 			}
 		}
 	}()
