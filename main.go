@@ -28,12 +28,12 @@ func usage(out io.Writer) {
 	fmt.Fprintf(out, "usage: %s [-d dir] <command>\n", os.Args[0])
 	fmt.Fprint(out, `
 flags:
-  -d <dir>            the directory from which to run, defaults to the current directory
+  -d <dir>            Set the directory from which to run, defaults to the current directory
 
 commands:
-  dump-config         write the current configuration to stdout; can be used to populate a default config
-  create-templates    place the default templates; will not overwrite existing files
-  serve-http          run as an http service
+  dump-config         Write the current configuration to stdout; can be used to populate a default config
+  create-templates    Place the default templates; will not overwrite existing files
+  serve-http          Run as an http service
 
 `)
 }
