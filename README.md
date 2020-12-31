@@ -22,6 +22,7 @@ flags:
   -d <dir>            Set the directory from which to run, defaults to the current directory
 
 commands:
+  help                Show this message
   dump-config         Write the current configuration to stdout; can be used to populate a default config
   create-templates    Place the default templates; will not overwrite existing files
   serve-http          Run as an http service
@@ -50,7 +51,7 @@ When accessing `/` without any parameters, you will be greeted with a banner and
 usage information. An example of HTML output for the banner is
 [here](welcome.html).
 
-```
+`````
 $ curl -s 'localhost:8088/'
   ::::::::::::.,:::::: :::::::..   .        :
   ;;;;;;;;'''';;;;'''' ;;;;``;;;;  ;;,.    ;;;
@@ -105,7 +106,7 @@ Post (i.e. create) a thread (*)
 (*) fields other than content are optional, board/thread has to exist
 ================================================================================
 HAVE FUN!
-```
+`````
 
 ## Usage
 
@@ -179,6 +180,7 @@ will be used when running termchan.
 In the `config.json` file, the default transport type is `tcp` on `:8088`.
 However, for reverse proxy setups, connection via a domain socket can be used.
 E.g.
+
 ```
 ...
 	"transport": {

@@ -31,6 +31,7 @@ flags:
   -d <dir>            Set the directory from which to run, defaults to the current directory
 
 commands:
+  help                Show this message
   dump-config         Write the current configuration to stdout; can be used to populate a default config
   create-templates    Place the default templates; will not overwrite existing files
   serve-http          Run as an http service
