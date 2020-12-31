@@ -51,7 +51,7 @@ When accessing `/` without any parameters, you will be greeted with a banner and
 usage information. An example of HTML output for the banner is
 [here](welcome.html).
 
-`````
+```
 $ curl -s 'localhost:8088/'
   ::::::::::::.,:::::: :::::::..   .        :
   ;;;;;;;;'''';;;;'''' ;;;;``;;;;  ;;,.    ;;;
@@ -106,7 +106,7 @@ Post (i.e. create) a thread (*)
 (*) fields other than content are optional, board/thread has to exist
 ================================================================================
 HAVE FUN!
-`````
+```
 
 ## Usage
 
@@ -187,6 +187,29 @@ E.g.
 		"Protocol": "unix",
 		"Socket": "/tmp/termchan/socket"
 	},
+...
+```
+
+### Board Settings
+
+Boards have associated limits (#active threads, #posts/thread, #bytes/post) with
+defaults (50, 100, 4096). The post limit is ensured before posting and
+larger posts will be rejected. Threads can always be viewed and replied to but
+only those within the limits are shown when viewing a board.
+
+Limits can be set in `config.json` through fields which are not shown by
+default. When omitted or invalid (e.g. negative numbers), defaults are used.
+
+```
+... 
+    {
+      "name": "f",
+      "description": "foo",
+      "style": "blue",
+      "maxThreads": 42,
+      "maxThreadLength": 69,
+      "maxPostBytes": 1337
+    }
 ...
 ```
 
