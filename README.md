@@ -8,13 +8,13 @@ A simple text board, powered by Golang's stdlib http server and sqlite.
 
 Making sure you have the go tool installed and set up, just do
 
-```sh
+```
 go get -u github.com/fgahr/termchan
 ```
 
 Afterwards, build the project with `go build`, then run it
 
-```sh
+```
 $ termchan help
 usage: ./termchan [-d dir] <command>
 
@@ -30,7 +30,7 @@ commands:
 
 The server will read a `config.json` file, a template of which can be created via
 
-```sh
+```
 $ termchan dump-config > config.json
 ```
 
@@ -38,7 +38,7 @@ The list of boards can be adjusted in `config.json`, using the example board
 as a template. After changing the configuration, restart the server or send a
 SIGHUP signal, e.g.
 
-```sh
+```
 $ kill -s HUP $(pgrep termchan)
 ```
 
@@ -50,7 +50,7 @@ When accessing `/` without any parameters, you will be greeted with a banner and
 usage information. An example of HTML output for the banner is
 [here](welcome.html).
 
-```sh
+```
 $ curl -s 'localhost:8088/'
   ::::::::::::.,:::::: :::::::..   .        :
   ;;;;;;;;'''';;;;'''' ;;;;``;;;;  ;;,.    ;;;
@@ -118,7 +118,7 @@ common operations without needing to interact with `curl` directly.
 
 Assuming the server is listening on port 8088 and has a board `/b/`, post with
 
-```sh
+```
 $ curl -s 'localhost:8088/b'  \
       --data-urlencode "name=me" \
       --data-urlencode "content=This is my first post"
@@ -134,7 +134,7 @@ This is my first post
 You will be greeted with a JSON view of the newly created thread. You can get an
 overview of the board with
 
-```sh
+```
 $ curl -s 'localhost:8088/b?format=json' | jq
 {
   "name": "b",
@@ -166,7 +166,7 @@ and `html/template` are used. The packages `tchan/output/ansi` and
 `tchan/output/html` are mostly mirrored and either one is suitable to learn
 about available fields and functions from within the template. Running
 
-```sh
+```
 $ termchan create-templates
 ```
 
