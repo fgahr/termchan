@@ -70,8 +70,8 @@ func (p *Protocol) UnmarshalJSON(b []byte) error {
 }
 
 type Transport struct {
-	Protocol Protocol
-	Socket   string
+	Protocol Protocol `json:"protocol"`
+	Socket   string   `json:"socket"`
 }
 
 func (t Transport) String() string {
@@ -155,6 +155,7 @@ func (s *Settings) ReadFromFile() error {
 	if exists, err := util.FileExists(cf); err != nil {
 		return errors.Wrapf(err, "error looking for config file %s", cf)
 	} else if !exists {
+		// No error, just use defaults.
 		return nil
 	}
 
