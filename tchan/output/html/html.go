@@ -6,6 +6,7 @@ import (
 	"html"
 	"html/template"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -262,6 +263,7 @@ func (w *Writer) postFormatter(styleName string) func(tchan.Post) template.HTML 
 			"timeANSIC": w.timeFormatter(time.ANSIC),
 		}).Execute(&buf, payload)
 		if err != nil {
+			log.Println(err)
 			return ""
 		}
 		return template.HTML(buf.String())
@@ -274,9 +276,9 @@ func (w *Writer) boardFormatter() func(tchan.Board) template.HTML {
 	}
 }
 
-func (w *Writer) highlighter(styleName string) func(string) template.HTML {
-	return func(s string) template.HTML {
-		return template.HTML(fmt.Sprintf("<span class=%q>%s</span>", styleName, s))
+func (w *Writer) highlighter(styleName string) func(interface{}) template.HTML {
+	return func(v interface{}) template.HTML {
+		return template.HTML(fmt.Sprintf("<span class=%q>%v</span>", styleName, v))
 	}
 }
 

@@ -185,8 +185,13 @@ func (s *Server) handleCreateThread() http.HandlerFunc {
 		rw.try(func() error { return s.db.CreateThread(rw.board, topic, &rw.post) },
 			http.StatusInternalServerError, "failed to create thread")
 
-		thr := tchan.Thread{}
-		ok := false
+		boardConf, ok := s.conf.BoardConfig(rw.board)
+		if !ok {
+			rw.respondNoSuchBoard()
+		}
+		thr := tchan.Thread{Board: boardConf}
+
+		ok = false
 		rw.try(func() error { return s.db.PopulateThread(rw.board, rw.post.ID, &thr, &ok) },
 			http.StatusInternalServerError, "failed to fetch thread for viewing")
 

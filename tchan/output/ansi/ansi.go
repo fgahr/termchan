@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -232,6 +233,7 @@ func (w *Writer) postFormatter(styleName string) func(tchan.Post) string {
 			"timeANSIC": w.timeFormatter(time.ANSIC),
 		}).Execute(&buf, payload)
 		if err != nil {
+			log.Println(err)
 			return ""
 		}
 		return buf.String()
@@ -244,12 +246,12 @@ func (w *Writer) boardFormatter() func(tchan.Board) string {
 	}
 }
 
-func (w *Writer) highlighter(styleName string) func(string) string {
-	return func(s string) string {
+func (w *Writer) highlighter(styleName string) func(interface{}) string {
+	return func(v interface{}) string {
 		if sty, ok := w.style(styleName); ok {
-			return fmt.Sprintf("%s%s\u001b[0m", sty, s)
+			return fmt.Sprintf("%s%v\u001b[0m", sty, v)
 		}
-		return s
+		return fmt.Sprint(v)
 	}
 }
 

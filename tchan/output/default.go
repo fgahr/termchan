@@ -53,7 +53,7 @@ const DefaultWelcome string = "{{ .FgGreen }}::::::::::::.,:::::: :::::::..   . 
 	"{{ .Separator.Double }}\n" +
 	"{{ .FgGreen }}HAVE{{ .End }} {{ .FgBlue }}FUN{{ .End }}!\n"
 
-const DefaultPost = `[{{ .ID }}] {{ .Author }} wrote at {{ .Timestamp | timeANSIC }}
+const DefaultPost = `[{{ .ID | highlight }}] {{ .Author }} wrote at {{ .Timestamp | timeANSIC }}
 
 {{ .Content }}
 `
