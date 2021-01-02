@@ -1,9 +1,11 @@
 package http
 
 import (
-	"fmt"
+	"context"
 	"log"
+	"net"
 	"net/http"
+	"os"
 	"sync"
 
 	"github.com/fgahr/termchan/tchan"
@@ -13,13 +15,15 @@ import (
 	"github.com/fgahr/termchan/tchan/output/ansi"
 	"github.com/fgahr/termchan/tchan/output/html"
 	"github.com/fgahr/termchan/tchan/output/json"
+	"github.com/fgahr/termchan/tchan/util"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 )
 
 // Server connects all aspects of the termchan application.
 type Server struct {
-	conf     *config.Opts
+	conf     *config.Settings
+	hs       *http.Server
 	db       backend.DB
 	router   *mux.Router
 	confLock *sync.RWMutex
@@ -29,7 +33,7 @@ type Server struct {
 
 // New creates a new server with configuration and backend.
 // Backend is assumed to be fully set up.
-func NewServer(conf *config.Opts) (*Server, error) {
+func NewServer(conf *config.Settings) (*Server, error) {
 	db := backend.New(conf)
 	if err := db.Init(); err != nil {
 		return nil, errors.Wrap(err, "backend setup failed")
@@ -47,13 +51,6 @@ func NewServer(conf *config.Opts) (*Server, error) {
 		return nil, err
 	}
 
-	if conf.WriteTemplates {
-		log.Println("write templates")
-		if err := output.WriteTemplates(conf.WorkingDirectory); err != nil {
-			return nil, errors.Wrap(err, "creating templates failed")
-		}
-	}
-
 	return s, nil
 }
 
@@ -64,16 +61,16 @@ func (s *Server) ReloadConfig() error {
 	defer s.confLock.Unlock()
 
 	log.Println("loading configuration")
-	if err := s.conf.Read(); err != nil {
+	if err := s.conf.ReadFromFile(); err != nil {
 		return err
 	}
 
 	log.Println("reading templates")
-	if err := s.htmlSet.Read(s.conf.WorkingDirectory); err != nil {
+	if err := s.htmlSet.Read(s.conf.TemplateDirectory()); err != nil {
 		return errors.Wrap(err, "reading html templates failed")
 	}
 
-	if err := s.ansiSet.Read(s.conf.WorkingDirectory); err != nil {
+	if err := s.ansiSet.Read(s.conf.TemplateDirectory()); err != nil {
 		return errors.Wrap(err, "reading ansi templates failed")
 	}
 
@@ -82,12 +79,40 @@ func (s *Server) ReloadConfig() error {
 
 // ServeHTTP handles HTTP requests.
 func (s *Server) ServeHTTP() error {
-	log.Printf("serving HTTP on port %d", s.conf.Port)
-	return http.ListenAndServe(s.portString(), s.router)
+	t := s.conf.Transport
+	if t.Protocol == config.Unix {
+		if exists, err := util.FileExists(t.Socket); err != nil {
+			return errors.Wrapf(err, "unable to check status of socket file%s", t.Socket)
+		} else if exists {
+			return errors.Errorf("cannot open socket: file %s exists", t.Socket)
+		} else {
+			// Clean it up after we're done
+			defer os.Remove(t.Socket)
+		}
+	}
+
+	listener, err := net.Listen(t.Protocol.String(), t.Socket)
+	if err != nil {
+		return errors.Wrapf(err, "unable to establish listener on %v", t)
+	}
+
+	s.hs = &http.Server{
+		Addr:    t.Socket,
+		Handler: s.router,
+	}
+	log.Printf("serving HTTP on %v", s.conf.Transport)
+	if err := s.hs.Serve(listener); err != nil && err != http.ErrServerClosed {
+		return err
+	}
+	return nil
 }
 
-func (s *Server) portString() string {
-	return fmt.Sprintf(":%d", s.conf.Port)
+// Stop causes the server to stop listening.
+func (s *Server) Stop() error {
+	if s.hs != nil {
+		return s.hs.Shutdown(context.Background())
+	}
+	return errors.New("not listening")
 }
 
 func (s *Server) confReader(f http.HandlerFunc) http.HandlerFunc {
@@ -115,7 +140,7 @@ func (s *Server) handleViewBoard() http.HandlerFunc {
 		}
 
 		ok = false
-		board := tchan.BoardOverview{BoardConfig: boardConf}
+		board := tchan.BoardOverview{Board: boardConf}
 		rw.try(func() error {
 			return s.db.PopulateBoard(rw.board, &board, &ok)
 		}, http.StatusInternalServerError, "failed to fetch board")

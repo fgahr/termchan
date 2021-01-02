@@ -4,15 +4,46 @@
 
 A simple text board, powered by Golang's stdlib http server and sqlite.
 
-## Installation
+## Running and Configuring
 
 Making sure you have the go tool installed and set up, just do
 
-```sh
+```
 go get -u github.com/fgahr/termchan
 ```
 
-Afterwards, build the project with `go build`, then run with `./termchan`
+Afterwards, build the project with `go build`, then run it
+
+```
+$ termchan help
+usage: ./termchan [-d dir] <command>
+
+flags:
+  -d <dir>            Set the directory from which to run, defaults to the current directory
+
+commands:
+  help                Show this message
+  dump-config         Write the current configuration to stdout; can be used to populate a default config
+  create-templates    Place the default templates; will not overwrite existing files
+  serve-http          Run as an http service
+
+```
+
+The server will read a `config.json` file, a template of which can be created via
+
+```
+$ termchan dump-config > config.json
+```
+
+The list of boards can be adjusted in `config.json`, using the example board
+as a template. After changing the configuration, restart the server or send a
+SIGHUP signal, e.g.
+
+```
+$ kill -s HUP $(pgrep termchan)
+```
+
+to make it reload its config.
 
 ## Overview
 
@@ -20,7 +51,7 @@ When accessing `/` without any parameters, you will be greeted with a banner and
 usage information. An example of HTML output for the banner is
 [here](welcome.html).
 
-```sh
+```
 $ curl -s 'localhost:8088/'
   ::::::::::::.,:::::: :::::::..   .        :
   ;;;;;;;;'''';;;;'''' ;;;;``;;;;  ;;,.    ;;;
@@ -77,42 +108,6 @@ Post (i.e. create) a thread (*)
 HAVE FUN!
 ```
 
-## Setup
-
-```sh
-termchan -h
-Usage of termchan:
-  -d string
-    	the base (configuration) directory for the service (default "./")
-  -p int
-    	the port for the server to listen on (default 8088)
-  -t  when given, create templates to adjust appearance
-```
-
-The server will read or create a `config.db` config file and a `boards`
-directory to store the database files for the individual boards. When the `-t`
-option is given, a `template/` directory will be created with default templates.
-See below for [configuration](#config).
-
-You can add new boards to the `config.db` file with the sqlite3 command and
-
-```sh
-INSERT INTO board (name, description, style)
-VALUES ('a', 'a board', 'red');
-```
-
-Defining a style is optional but recommended. Recognized style names are, as
-of writing, `none`, `black`, `red`, `green`, `yellow`, `blue`, `magenta`,
-`cyan`, and `white`.
-
-After changing the board list, restart the server or send a SIGHUP signal, e.g.
-
-```sh
-kill -s HUP $(pgrep termchan)
-```
-
-to make it reload its config.
-
 ## Usage
 
 ### With tccli
@@ -124,7 +119,7 @@ common operations without needing to interact with `curl` directly.
 
 Assuming the server is listening on port 8088 and has a board `/b/`, post with
 
-```sh
+```
 $ curl -s 'localhost:8088/b'  \
       --data-urlencode "name=me" \
       --data-urlencode "content=This is my first post"
@@ -140,7 +135,7 @@ This is my first post
 You will be greeted with a JSON view of the newly created thread. You can get an
 overview of the board with
 
-```sh
+```
 $ curl -s 'localhost:8088/b?format=json' | jq
 {
   "name": "b",
@@ -162,21 +157,67 @@ $ curl -s 'localhost:8088/b?format=json' | jq
 }
 ```
 
-<a name="config">
+## Advanced
 
-# Configuration
+### Appearance
 
 The appearance of termchan can be changed via [templates](https://golang.org/pkg/text/template/). These are part of Go's
 standard library. To support both terminal and html output, both `text/template`
 and `html/template` are used. The packages `tchan/output/ansi` and
 `tchan/output/html` are mostly mirrored and either one is suitable to learn
-about available fields and functions from within the template.
+about available fields and functions from within the template. Running
 
-When a template is missing, its default is used (embedded in the source). To
-use a new or edited template, restart termchan or send a `SIGHUP` signal to a
-running process.
+```
+$ termchan create-templates
+```
 
-# TODOs
+will dump the integrated defaults as files inside a `template/` folder. Already
+existing files will not be overwritten. If you delete a template, its default
+will be used when running termchan.
+
+### Domain Socket Connections
+
+In the `config.json` file, the default transport type is `tcp` on `:8088`.
+However, for reverse proxy setups, connection via a domain socket can be used.
+E.g.
+
+```
+...
+	"transport": {
+		"Protocol": "unix",
+		"Socket": "/tmp/termchan/socket"
+	},
+...
+```
+
+### Board Settings
+
+Boards have associated limits (#active threads, #posts/thread, #bytes/post) with
+defaults (50, 100, 4096). The post limit is ensured before posting and
+larger posts will be rejected. Threads can always be viewed and replied to but
+only those within the limits are shown when viewing a board.
+
+Limits can be set in `config.json` through fields which are not shown by
+default. When omitted or invalid (e.g. negative numbers), defaults are used.
+
+```
+... 
+    {
+      "name": "f",
+      "description": "foo",
+      "style": "blue",
+      "maxThreads": 42,
+      "maxThreadLength": 69,
+      "maxPostBytes": 1337
+    }
+...
+```
+
+## TODOs
 
 - Enable banning of users (requires re-enabling tracking of IP addresses, should
   probably mention that in the welcome message)
+- Basic security measures
+- More available styles (e.g. bold)
+- Enable editing CSS for html output
+- Whatever reasonable request you might open an issue for (pull-requests welcome)

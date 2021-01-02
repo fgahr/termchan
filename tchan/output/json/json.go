@@ -20,7 +20,7 @@ func (w *Writer) write(obj interface{}) error {
 	return w.enc.Encode(obj)
 }
 
-func (w *Writer) WriteWelcome(boards []tchan.BoardConfig) error {
+func (w *Writer) WriteWelcome(boards []tchan.Board) error {
 	return w.write(boards)
 }
 

@@ -30,6 +30,6 @@ type DB interface {
 }
 
 // New creates a new backend which has yet to be initialized.
-func New(opts *config.Opts) DB {
+func New(opts *config.Settings) DB {
 	return &sqlite{conf: opts}
 }

@@ -17,7 +17,7 @@ import (
 )
 
 type requestWorker struct {
-	conf    *config.Opts
+	conf    *config.Settings
 	w       output.Writer
 	r       *http.Request
 	params  url.Values
@@ -117,7 +117,7 @@ func (rw *requestWorker) extractPost() {
 		return
 	}
 
-	// Trimming extraneous spaces avoids all kinds of abuse
+	// Trimming extraneous spaces avoids some kinds of abuse/trolling
 	content := strings.TrimSpace(rw.params.Get("content"))
 	bc, ok := rw.conf.BoardConfig(rw.board)
 	if !ok {
@@ -125,8 +125,8 @@ func (rw *requestWorker) extractPost() {
 		rw.respondError(http.StatusNotFound)
 		return
 	}
-	if len(content) > bc.MaxPostBytes {
-		rw.err = errors.Errorf("post too large: %d bytes (max %d bytes)", len(content), bc.MaxPostBytes)
+	if len(content) > bc.MaxPostBytes() {
+		rw.err = errors.Errorf("post too large: %d bytes (max %d bytes)", len(content), bc.MaxPostBytes())
 		rw.respondError(http.StatusBadRequest)
 		return
 	} else if content == "" {
