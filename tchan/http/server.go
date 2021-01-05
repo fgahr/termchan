@@ -96,6 +96,12 @@ func (s *Server) ServeHTTP() error {
 		return errors.Wrapf(err, "unable to establish listener on %v", t)
 	}
 
+	if t.Protocol == config.Unix {
+		if err := os.Chmod(t.Socket, 0777); err != nil {
+			return errors.Wrapf(err, "unable to open socket %s for other services", t.Socket)
+		}
+	}
+
 	s.hs = &http.Server{
 		Addr:    t.Socket,
 		Handler: s.router,
