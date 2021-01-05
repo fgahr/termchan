@@ -97,7 +97,7 @@ func (s *Server) ServeHTTP() error {
 	}
 
 	if t.Protocol == config.Unix {
-		if err := os.Chmod(t.Socket, 0777); err != nil {
+		if err := os.Chmod(t.Socket, 0666); err != nil {
 			return errors.Wrapf(err, "unable to open socket %s for other services", t.Socket)
 		}
 	}
