@@ -4,15 +4,26 @@
 
 A simple text board, powered by Golang's stdlib http server and sqlite.
 
-## Running and Configuring
+## Installation
 
-Making sure you have the go tool installed and set up, just do
+Making sure you have gcc (for `sqlite3` compilation) installed and the go tool
+installed and set up, just do
 
 ```
 go get -u github.com/fgahr/termchan
 ```
 
-Afterwards, build the project with `go build`, then run it
+Note that the initial compilation of the
+[`github.com/mattn/go-sqlite3`](https://github.com/mattn/go-sqlite3)
+dependency can take some time, especially on slower devices. If you run into
+trouble, consider installing this dependency first. Check out the repo for
+detailed instructions.
+
+Afterward successful installation, the `termchan` binary is located under
+`$GOPATH/bin/termchan`. The following instructions assume that it is on your
+shell's `$PATH`.
+
+## Running and Configuring
 
 ```
 $ termchan help
