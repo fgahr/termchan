@@ -10,9 +10,10 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/pkg/errors"
+
 	"github.com/fgahr/termchan/tchan"
 	"github.com/fgahr/termchan/tchan/util"
-	"github.com/pkg/errors"
 )
 
 // Settings deals with all variable and optional aspects of termchan.

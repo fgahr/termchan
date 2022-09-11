@@ -8,10 +8,11 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/pkg/errors"
+
 	"github.com/fgahr/termchan/tchan/config"
 	"github.com/fgahr/termchan/tchan/http"
 	"github.com/fgahr/termchan/tchan/output"
-	"github.com/pkg/errors"
 )
 
 type command func(conf config.Settings, cmd string, args ...string) error

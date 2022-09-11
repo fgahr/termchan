@@ -5,9 +5,10 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/pkg/errors"
+
 	"github.com/fgahr/termchan/tchan"
 	"github.com/fgahr/termchan/tchan/util"
-	"github.com/pkg/errors"
 )
 
 // Writer describes an entity in charge of writing a server response.

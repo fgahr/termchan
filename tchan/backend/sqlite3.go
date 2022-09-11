@@ -5,10 +5,11 @@ import (
 	"os"
 	"time"
 
+	"github.com/pkg/errors"
+
 	"github.com/fgahr/termchan/tchan"
 	"github.com/fgahr/termchan/tchan/config"
 	"github.com/fgahr/termchan/tchan/util"
-	"github.com/pkg/errors"
 
 	// SQLite3 bindings
 	_ "github.com/mattn/go-sqlite3"

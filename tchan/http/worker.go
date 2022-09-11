@@ -9,11 +9,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gorilla/mux"
+	"github.com/pkg/errors"
+
 	"github.com/fgahr/termchan/tchan"
 	"github.com/fgahr/termchan/tchan/config"
 	"github.com/fgahr/termchan/tchan/output"
-	"github.com/gorilla/mux"
-	"github.com/pkg/errors"
 )
 
 type requestWorker struct {

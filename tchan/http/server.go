@@ -8,6 +8,9 @@ import (
 	"os"
 	"sync"
 
+	"github.com/gorilla/mux"
+	"github.com/pkg/errors"
+
 	"github.com/fgahr/termchan/tchan"
 	"github.com/fgahr/termchan/tchan/backend"
 	"github.com/fgahr/termchan/tchan/config"
@@ -16,8 +19,6 @@ import (
 	"github.com/fgahr/termchan/tchan/output/html"
 	"github.com/fgahr/termchan/tchan/output/json"
 	"github.com/fgahr/termchan/tchan/util"
-	"github.com/gorilla/mux"
-	"github.com/pkg/errors"
 )
 
 // Server connects all aspects of the termchan application.
@@ -52,6 +53,18 @@ func NewServer(conf *config.Settings) (*Server, error) {
 	}
 
 	return s, nil
+}
+
+func (s *Server) routes() {
+	s.router.HandleFunc("/", s.handleWelcome()).Methods("GET")
+	s.router.HandleFunc("/{board:[a-zA-Z0-9]+}", s.handleViewBoard()).Methods("GET")
+	s.router.HandleFunc("/{board:[a-zA-Z0-9]+}/", s.handleViewBoard()).Methods("GET")
+	s.router.HandleFunc("/{board:[a-zA-Z0-9]+}", s.handleCreateThread()).Methods("POST")
+	s.router.HandleFunc("/{board:[a-zA-Z0-9]+}/", s.handleCreateThread()).Methods("POST")
+	s.router.HandleFunc("/{board:[a-zA-Z0-9]+}/{id:[0-9]+}", s.handleViewThread()).Methods("GET")
+	s.router.HandleFunc("/{board:[a-zA-Z0-9]+}/{id:[0-9]+}/", s.handleViewThread()).Methods("GET")
+	s.router.HandleFunc("/{board:[a-zA-Z0-9]+}/{id:[0-9]+}", s.handleReplyToThread()).Methods("POST")
+	s.router.HandleFunc("/{board:[a-zA-Z0-9]+}/{id:[0-9]+}/", s.handleReplyToThread()).Methods("POST")
 }
 
 // ReloadConfig forces the server to reload its configuration and templates.
