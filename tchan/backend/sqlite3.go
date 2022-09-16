@@ -6,13 +6,12 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	// SQLite3 bindings
+	_ "github.com/mattn/go-sqlite3"
 
 	"github.com/fgahr/termchan/tchan"
 	"github.com/fgahr/termchan/tchan/config"
 	"github.com/fgahr/termchan/tchan/util"
-
-	// SQLite3 bindings
-	_ "github.com/mattn/go-sqlite3"
 )
 
 type sqlite struct {

@@ -11,10 +11,11 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/pkg/errors"
+
 	"github.com/fgahr/termchan/tchan"
 	"github.com/fgahr/termchan/tchan/output"
 	"github.com/fgahr/termchan/tchan/util"
-	"github.com/pkg/errors"
 )
 
 type TemplateSet struct {
